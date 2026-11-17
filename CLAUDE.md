@@ -16,8 +16,10 @@ Bereiche der App:
 - Körper: Waage, Gewichtsziel, Körperwerte, Alter
 - Datensicherung: Backup speichern / laden (JSON-Datei)
 
-**Wo ist sie online?** Noch nicht festgehalten. (Falls GitHub Pages genutzt wird,
-hier die Adresse eintragen.)
+**Online:** https://marchens1977.github.io/Fitness-Tracker/ (über GitHub Pages).
+Jede Änderung, die in `main` übernommen wird, erscheint dort nach ein bis zwei
+Minuten automatisch. Tipp für das Handy: Seite in Chrome neu laden, falls noch
+die alte Version angezeigt wird.
 
 ## 2. Technischer Aufbau
 
@@ -50,11 +52,11 @@ Wichtige Details in `index.html`:
 ## 4. Verlauf
 
 - 15.11.2026 – App-Datei `index.html` vom Nutzer hochgeladen (erster Stand).
-- 16.11.2026 – Projekt-Tagebuch `CLAUDE.md` angelegt.
+- 16.11.2026 – Projekt-Tagebuch `CLAUDE.md` angelegt (PR #1).
+- 17.11.2026 – Online-Adresse (GitHub Pages) im Tagebuch ergänzt.
 
 ## 5. Offene Ideen / nächste Schritte
 
-- Klären und hier eintragen, wo die App online ist (z. B. GitHub Pages).
 - Echte Anbindung für adidas Running / Yazio / Schrittzähler (aktuell nur Import per Datei).
 
 ## 6. Hinweise zur Zusammenarbeit
