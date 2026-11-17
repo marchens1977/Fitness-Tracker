@@ -78,12 +78,17 @@ Wichtige Details in `index.html`:
 - 17.11.2026 – Online-Adresse (GitHub Pages) im Tagebuch ergänzt.
 - 17.11.2026 – Entscheidung: eigener Schrittzähler als Android-App (Plan B, siehe unten).
 - 17.11.2026 – Android-App gebaut (Ordner `android/`, automatischer APK-Bau).
-  **Noch nicht vom Nutzer getestet.**
+- 17.11.2026 – Nutzer hat die App installiert (Play Protect: „App scannen“ reicht).
+  Zählen bei geöffneter App funktioniert. Kein Backup nötig (noch keine Daten).
+  Achtung: Nutzer hatte zuerst Chrome statt der App offen – erkennbar an der
+  Adresszeile oben; die App hat keine.
 
 ## 5. Offene Ideen / nächste Schritte
 
-- **Als Nächstes: Nutzer installiert und testet die Android-App** (APK-Link oben).
-  Danach Daten per Backup aus Chrome in die App übertragen.
+- **Als Nächstes: Hintergrund-Zählen prüfen** (18.11.): Zählt die App, während sie
+  geschlossen ist? Landen Abend-Schritte beim richtigen Tag (Mitternacht)?
+- Bei Zeitschätzungen künftig „wahrscheinlich X, schlimmstenfalls Y“ angeben
+  (die erste Schätzung war deutlich zu großzügig).
 - (Erledigt, Hintergrund zur Entscheidung:) eigener Schrittzähler (Plan B).
   - Hintergrund: Eine Webseite darf in Chrome nur zählen, solange sie offen und
     der Bildschirm an ist. Den vorhandenen „Live-Zähler“ (`toggleMotionStepCounter`,
