@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Versionsnummer: kommt beim automatischen Bau von GitHub (fortlaufende Nummer),
+// damit jede neue APK über die alte installiert werden kann.
+def buildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as Integer
+
+android {
+    namespace 'de.fitnesstracker.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'de.fitnesstracker.app'
+        minSdk 26
+        targetSdk 35
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
+    }
+
+    // Fester Signatur-Schlüssel, damit Updates ohne Neuinstallation (und ohne
+    // Datenverlust) funktionieren. Bewusst kein Geheimnis: die App wird nur
+    // privat installiert, nicht im Play Store veröffentlicht.
+    signingConfigs {
+        app {
+            storeFile file('app-signing.keystore')
+            storePassword 'fitnesstracker'
+            keyAlias 'fitnesstracker'
+            keyPassword 'fitnesstracker'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.app
+        }
+        debug {
+            signingConfig signingConfigs.app
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

@@ -5914,11 +5914,17 @@
             bodyMetricsLogV2: getBodyMetricsLog(),
             personalWhyV2: localStorage.getItem('personalWhyV2')
         };
+        const fileName = `fitness_backup_${getLocalDateKey()}.json`;
+        if (window.AndroidApp && typeof window.AndroidApp.saveFile === 'function') {
+            // In der Android-App: Speicherort wählen lassen (Downloads in der App nicht möglich)
+            window.AndroidApp.saveFile(fileName, JSON.stringify(payload, null, 2));
+            return;
+        }
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `fitness_backup_${getLocalDateKey()}.json`;
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -6218,6 +6224,64 @@
                 runs: getRuns().map(r => ({ externalId: r.id, date: r.date, distanceKm: r.distanceKm, durationMin: r.durationMin, source: r.source })),
                 nutrition: Object.keys(getNutritionHistory()).sort().flatMap(d => getNutritionHistory()[d].map(e => ({ externalId: e.id, date: d, name: e.name, kcal: e.kcal, protein: e.protein })))
             };
+        }
+    };
+
+    /* ====================================================================
+       EIGENE ANDROID-APP (Ordner "android/")
+       Die App zeigt diese Seite an und liest den Schrittzähler-Chip des Handys aus.
+       Sie ruft regelmäßig FitnessNativeApp.onSteps([{date, steps}], zustand) auf.
+       zustand: 'ok' | 'permission' (Erlaubnis fehlt) | 'nosensor' (kein Chip)
+       Es gilt "größerer Wert gewinnt" – manuelle Einträge gehen nicht verloren.
+       ==================================================================== */
+    window.FitnessNativeApp = {
+        onSteps(items, state) {
+            this.showState(state);
+            if (!Array.isArray(items)) return;
+            const today = getLocalDateKey();
+            let changedToday = false;
+            let changedPast = false;
+            items.forEach(item => {
+                const day = item && bridgeDateKey(item.date, null);
+                const count = item ? Math.round(Number(item.steps)) : NaN;
+                if (!day || !isFinite(count) || count <= 0 || count > 150000) return;
+                if (count > getStepsForDate(day)) {
+                    saveStepsForDate(day, count);
+                    if (day === today) changedToday = true; else changedPast = true;
+                }
+            });
+            if (changedPast) {
+                initApp();
+            } else if (changedToday) {
+                renderSteps();
+            }
+        },
+
+        showState(state) {
+            const btn = document.getElementById('stepsSensorBtn');
+            const dot = document.getElementById('stepsSensorDot');
+            const title = document.getElementById('stepsSensorTitle');
+            const status = document.getElementById('stepsSensorStatus');
+            if (!btn || !status) return;
+            if (state === 'nosensor') {
+                title.textContent = 'Bewegungssensor';
+                status.textContent = 'Dieses Handy hat keinen Schrittzähler-Chip. Der Live-Zähler funktioniert trotzdem.';
+                btn.style.display = '';
+                return;
+            }
+            if (motionSensorActive) stopMotionStepCounter('');
+            title.textContent = 'Handy-Schrittzähler (App)';
+            if (state === 'permission') {
+                dot.classList.remove('recording');
+                status.textContent = 'Erlaubnis „Körperliche Aktivität“ fehlt – bitte auf „Erlauben“ tippen.';
+                btn.textContent = 'Erlauben';
+                btn.onclick = () => window.AndroidApp && window.AndroidApp.requestPermission();
+                btn.style.display = '';
+            } else {
+                dot.classList.add('recording');
+                status.textContent = 'Aktiv: zählt auch, wenn die App geschlossen ist (ab dem Tag der Installation).';
+                btn.style.display = 'none';
+            }
         }
     };
 
