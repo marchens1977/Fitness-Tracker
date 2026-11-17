@@ -82,6 +82,8 @@ Wichtige Details in `index.html`:
   Zählen bei geöffneter App funktioniert. Kein Backup nötig (noch keine Daten).
   Achtung: Nutzer hatte zuerst Chrome statt der App offen – erkennbar an der
   Adresszeile oben; die App hat keine.
+- 17.11.2026 – App-Symbol geändert: türkise Hantel statt Fußabdrücke
+  (`android/app/src/main/res/drawable/ic_launcher_foreground.xml`).
 
 ## 5. Offene Ideen / nächste Schritte
 
