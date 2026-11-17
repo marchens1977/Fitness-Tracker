@@ -55,6 +55,10 @@ Wichtige Details in `index.html`:
 - Übergabe an die Webseite: `window.FitnessNativeApp.onSteps([{date, steps}], zustand)`
   in `index.html` („größerer Wert gewinnt“). Backup speichern ruft in der App
   `window.AndroidApp.saveFile(...)` auf (Speicherort wählen).
+- **Widget** für den Startbildschirm (`StepWidget.java`, `res/layout/widget_steps.xml`):
+  zeigt Schritte heute + Ziel + Balken. Wert = größerer aus Chip und Webseite
+  (Webseite meldet per `AndroidApp.reportSteps(datum, schritte, ziel)` aus
+  `renderSteps()`). Aktualisiert sich bei jedem Ablesen (ca. alle 15 Min.).
 - Download der fertigen App:
   https://github.com/marchens1977/Fitness-Tracker/releases/latest/download/FitnessTracker.apk
   (wird bei jeder Änderung an `android/` auf `main` neu gebaut).
@@ -88,6 +92,7 @@ Wichtige Details in `index.html`:
   auf Blau `#002D72`) statt Fußabdrücke
   (`android/app/src/main/res/drawable/ic_launcher_foreground.xml`).
 - 17.11.2026 – Ganze App auf Mets-Farben umgestellt (vorher Türkis/Lila/Grau).
+- 17.11.2026 – Startbildschirm-Widget „Schritte heute“ eingebaut.
 
 ## 5. Offene Ideen / nächste Schritte
 
