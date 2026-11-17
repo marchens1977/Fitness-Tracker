@@ -63,11 +63,11 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setStatusBarColor(Color.parseColor("#121212"));
-        getWindow().setNavigationBarColor(Color.parseColor("#121212"));
+        getWindow().setStatusBarColor(Color.parseColor("#0e1324"));
+        getWindow().setNavigationBarColor(Color.parseColor("#0e1324"));
 
         webView = new WebView(this);
-        webView.setBackgroundColor(Color.parseColor("#121212"));
+        webView.setBackgroundColor(Color.parseColor("#0e1324"));
         setContentView(webView);
 
         WebSettings settings = webView.getSettings();

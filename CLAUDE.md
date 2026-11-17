@@ -66,7 +66,9 @@ Wichtige Details in `index.html`:
 ## 3. Regeln und Entscheidungen
 
 - Alles bleibt in **einer Datei** (`index.html`), damit die App einfach zu öffnen ist.
-- App-Sprache ist Deutsch, dunkles Design (Akzentfarbe Türkis `#03dac6`).
+- App-Sprache ist Deutsch, dunkles Design in **New-York-Mets-Farben** (Wunsch des
+  Nutzers, großer Mets-Fan): Hauptfarbe Orange `#ff5910`, Zweitfarbe helles Blau
+  `#6e9bff`, Hintergründe dunkelblau (z. B. `#0e1324`). Kein Mets-Logo (geschützt).
 - Daten bleiben lokal auf dem Gerät; Sicherung über Backup-Datei.
 - Keine persönlichen oder geheimen Daten (E-Mail, Passwörter, API-Schlüssel) ins
   Projekt schreiben.
@@ -85,6 +87,7 @@ Wichtige Details in `index.html`:
 - 17.11.2026 – App-Symbol geändert: Hantel in New-York-Mets-Farben (Orange `#FF5910`
   auf Blau `#002D72`) statt Fußabdrücke
   (`android/app/src/main/res/drawable/ic_launcher_foreground.xml`).
+- 17.11.2026 – Ganze App auf Mets-Farben umgestellt (vorher Türkis/Lila/Grau).
 
 ## 5. Offene Ideen / nächste Schritte
 
