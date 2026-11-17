@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#121212">
+    <meta name="theme-color" content="#0e1324">
     <title>Mein Fitness-Tracker</title>
     <style>
         :root {
@@ -17,7 +17,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #121212;
+            background: #0e1324;
             color: #e0e0e0;
             margin: 0;
             padding: 0;
@@ -33,21 +33,21 @@
             align-items: center;
             text-align: center;
             padding: 32px 24px;
-            background: radial-gradient(circle at top, #1f2928 0%, #121212 65%);
+            background: radial-gradient(circle at top, #1d2f5c 0%, #0e1324 65%);
         }
 
         .welcome-logo {
             width: 84px;
             height: 84px;
             border-radius: 24px;
-            background: #1e1e1e;
-            border: 2px solid #03dac6;
+            background: #161e30;
+            border: 2px solid #ff5910;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 38px;
             margin-bottom: 24px;
-            box-shadow: 0 10px 30px rgba(3, 218, 198, 0.18);
+            box-shadow: 0 10px 30px rgba(255, 89, 16, 0.18);
         }
 
         .welcome-title {
@@ -71,11 +71,11 @@
             font-size: 1.15rem;
             font-weight: 700;
             border-radius: 16px;
-            background: #03dac6;
-            color: #000000;
+            background: #ff5910;
+            color: #000412;
             border: none;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(3, 218, 198, 0.3);
+            box-shadow: 0 6px 20px rgba(255, 89, 16, 0.3);
         }
 
         .welcome-start-btn:active {
@@ -100,7 +100,7 @@
         .top-bar-title {
             font-size: 1.15rem;
             font-weight: 700;
-            color: #03dac6;
+            color: #ff5910;
             margin: 0;
         }
 
@@ -109,9 +109,9 @@
             min-height: 36px;
             padding: 6px 12px;
             font-size: 0.82rem;
-            background: #232323;
+            background: #1a2235;
             color: #b0b0b0;
-            border: 1px solid #353535;
+            border: 1px solid #283147;
             border-radius: 8px;
         }
 
@@ -124,22 +124,22 @@
         }
 
         .card {
-            background: #1e1e1e;
+            background: #161e30;
             padding: 16px;
             border-radius: 14px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
             margin-bottom: 14px;
-            border: 1px solid #2d2d2d;
+            border: 1px solid #222a3f;
         }
 
         h2 {
-            color: #03dac6;
+            color: #ff5910;
             margin: 0 0 8px 0;
             font-size: 1.12rem;
         }
 
         h3 {
-            color: #bb86fc;
+            color: #6e9bff;
             margin: 14px 0 8px 0;
             font-size: 0.96rem;
         }
@@ -156,18 +156,18 @@
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            background: #252525;
+            background: #1c2337;
             padding: 8px 10px;
             border-radius: 10px;
             margin-bottom: 14px;
-            border: 1px solid #333;
+            border: 1px solid #262f45;
         }
 
         .date-nav button.step-btn {
             width: 40px;
             min-height: 40px;
             padding: 0;
-            background: #323232;
+            background: #262e44;
             color: #ffffff;
             font-size: 1.1rem;
             border-radius: 8px;
@@ -187,8 +187,8 @@
             text-align: center;
             font-size: 0.95rem;
             font-weight: 600;
-            background: #1e1e1e;
-            border: 1px solid #3f3f3f;
+            background: #161e30;
+            border: 1px solid #2f3a51;
         }
 
         /* Formulare & Buttons */
@@ -204,9 +204,9 @@
             min-height: 48px;
             padding: 11px 13px;
             margin: 0 0 10px 0;
-            border: 1px solid #3f3f3f;
+            border: 1px solid #2f3a51;
             border-radius: 10px;
-            background: #292929;
+            background: #1f273b;
             color: #ffffff;
             font-size: 16px;
             font-family: inherit;
@@ -219,7 +219,7 @@
 
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #03dac6;
+            border-color: #ff5910;
         }
 
         .input-split {
@@ -234,8 +234,8 @@
             padding: 12px 16px;
             border: none;
             border-radius: 10px;
-            background: #03dac6;
-            color: #000000;
+            background: #ff5910;
+            color: #000412;
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
@@ -257,14 +257,14 @@
         }
 
         .btn-secondary {
-            background: #2b2b2b;
+            background: #20293d;
             color: #e0e0e0;
-            border: 1px solid #404040;
+            border: 1px solid #303a52;
         }
 
         .btn-purple {
-            background: #bb86fc;
-            color: #000000;
+            background: #6e9bff;
+            color: #000412;
         }
 
         .btn-blue {
@@ -276,7 +276,7 @@
         .prev-session-box {
             background: #24272a;
             border: 1px solid #363c42;
-            border-left: 3px solid #bb86fc;
+            border-left: 3px solid #6e9bff;
             border-radius: 10px;
             padding: 10px 12px;
             margin-bottom: 10px;
@@ -292,7 +292,7 @@
         .prev-session-title {
             font-size: 0.82rem;
             font-weight: 700;
-            color: #bb86fc;
+            color: #6e9bff;
         }
 
         .mini-chart-btn {
@@ -301,8 +301,8 @@
             padding: 4px 10px;
             font-size: 0.76rem;
             background: #2f3338;
-            color: #03dac6;
-            border: 1px solid rgba(3, 218, 198, 0.4);
+            color: #ff5910;
+            border: 1px solid rgba(255, 89, 16, 0.4);
             border-radius: 7px;
             flex-shrink: 0;
         }
@@ -324,8 +324,8 @@
         }
 
         .prev-pill.active-target {
-            border-color: #03dac6;
-            color: #03dac6;
+            border-color: #ff5910;
+            color: #ff5910;
             font-weight: 600;
         }
 
@@ -348,9 +348,9 @@
         }
 
         .delta-up {
-            background: rgba(3, 218, 198, 0.16);
-            color: #03dac6;
-            border: 1px solid rgba(3, 218, 198, 0.35);
+            background: rgba(255, 89, 16, 0.16);
+            color: #ff5910;
+            border: 1px solid rgba(255, 89, 16, 0.35);
         }
 
         .delta-down {
@@ -366,9 +366,9 @@
         }
 
         .delta-new {
-            background: rgba(187, 134, 252, 0.14);
-            color: #bb86fc;
-            border: 1px solid rgba(187, 134, 252, 0.3);
+            background: rgba(110, 155, 255, 0.14);
+            color: #6e9bff;
+            border: 1px solid rgba(110, 155, 255, 0.3);
         }
 
         /* Filter-Chips */
@@ -390,31 +390,31 @@
             min-height: 36px;
             padding: 6px 12px;
             border-radius: 999px;
-            background: #282828;
+            background: #1e263a;
             color: #bdbdbd;
-            border: 1px solid #3a3a3a;
+            border: 1px solid #2c354c;
             font-size: 0.82rem;
             white-space: nowrap;
             flex-shrink: 0;
         }
 
         .chip.active {
-            background: #03dac6;
-            color: #000000;
-            border-color: #03dac6;
+            background: #ff5910;
+            color: #000412;
+            border-color: #ff5910;
             font-weight: 700;
         }
 
         .chip.purple-active.active {
-            background: #bb86fc;
-            border-color: #bb86fc;
-            color: #000000;
+            background: #6e9bff;
+            border-color: #6e9bff;
+            color: #000412;
         }
 
         /* Charts */
         .chart-wrap {
-            background: #171717;
-            border: 1px solid #2e2e2e;
+            background: #111829;
+            border: 1px solid #222b40;
             border-radius: 12px;
             padding: 10px 8px 6px 8px;
             margin-top: 8px;
@@ -452,11 +452,11 @@
 
         /* Workout-Einträge & Archiv */
         .exercise-block {
-            background: #252525;
+            background: #1c2337;
             border-radius: 10px;
             padding: 12px;
             margin-bottom: 10px;
-            border-left: 3px solid #bb86fc;
+            border-left: 3px solid #6e9bff;
         }
 
         .exercise-block.cardio-block {
@@ -464,7 +464,7 @@
         }
 
         .exercise-block.teal-block {
-            border-left-color: #03dac6;
+            border-left-color: #ff5910;
         }
 
         .exercise-block-header {
@@ -498,14 +498,14 @@
             align-items: center;
             gap: 8px;
             padding: 8px 10px;
-            background: #242424;
+            background: #1b2336;
             border-radius: 8px;
             margin-top: 6px;
             font-size: 0.88rem;
         }
 
         .exercise-block .set-row {
-            background: #1e1e1e;
+            background: #161e30;
         }
 
         .set-row-content {
@@ -516,7 +516,7 @@
         }
 
         .set-badge {
-            color: #03dac6;
+            color: #ff5910;
             font-weight: 600;
             margin-right: 4px;
         }
@@ -526,14 +526,14 @@
         }
 
         .set-badge.purple {
-            color: #bb86fc;
+            color: #6e9bff;
         }
 
         .del-small {
             width: 30px;
             min-height: 30px;
             padding: 0;
-            background: #2d2d2d;
+            background: #222a3f;
             color: #cf6679;
             border-radius: 6px;
             font-size: 16px;
@@ -547,8 +547,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 10px;
-            background: #252525;
-            border: 1px solid #383838;
+            background: #1c2337;
+            border: 1px solid #2a344a;
             border-radius: 10px;
             padding: 12px;
             margin-bottom: 12px;
@@ -559,7 +559,7 @@
             width: 9px;
             height: 9px;
             border-radius: 50%;
-            background: #03dac6;
+            background: #ff5910;
             margin-right: 6px;
         }
 
@@ -573,9 +573,9 @@
             min-height: 38px;
             padding: 8px 12px;
             font-size: 0.82rem;
-            background: #2f2f2f;
-            color: #03dac6;
-            border: 1px solid #03dac6;
+            background: #232c41;
+            color: #ff5910;
+            border: 1px solid #ff5910;
             flex-shrink: 0;
         }
 
@@ -598,7 +598,7 @@
         }
 
         .stat-box {
-            background: #262626;
+            background: #1c2438;
             padding: 11px 6px;
             border-radius: 10px;
             text-align: center;
@@ -618,8 +618,8 @@
         }
 
         .hero-box {
-            background: #252525;
-            border: 1px solid #353535;
+            background: #1c2337;
+            border: 1px solid #283147;
             border-radius: 12px;
             padding: 14px;
             text-align: center;
@@ -629,7 +629,7 @@
         .hero-box-value {
             font-size: 1.75rem;
             font-weight: 700;
-            color: #03dac6;
+            color: #ff5910;
             line-height: 1.2;
         }
 
@@ -642,7 +642,7 @@
         .progress-track {
             width: 100%;
             height: 11px;
-            background: #2c2c2c;
+            background: #21293e;
             border-radius: 999px;
             overflow: hidden;
             margin: 10px 0;
@@ -651,7 +651,7 @@
         .progress-fill {
             height: 100%;
             width: 0%;
-            background: #03dac6;
+            background: #ff5910;
             transition: width 0.25s ease;
         }
 
@@ -660,7 +660,7 @@
         }
 
         .progress-fill.purple {
-            background: #bb86fc;
+            background: #6e9bff;
         }
 
         /* Motivation: Wochen-Matrix & Abzeichen */
@@ -672,8 +672,8 @@
         }
 
         .day-pill {
-            background: #262626;
-            border: 1px solid #363636;
+            background: #1c2438;
+            border: 1px solid #283248;
             border-radius: 10px;
             padding: 8px 0;
             text-align: center;
@@ -682,9 +682,9 @@
         }
 
         .day-pill.done {
-            background: rgba(3, 218, 198, 0.16);
-            border-color: #03dac6;
-            color: #03dac6;
+            background: rgba(255, 89, 16, 0.16);
+            border-color: #ff5910;
+            color: #ff5910;
             font-weight: 700;
         }
 
@@ -696,8 +696,8 @@
         }
 
         .achievement-card {
-            background: #252525;
-            border: 1px solid #333;
+            background: #1c2337;
+            border: 1px solid #262f45;
             border-radius: 10px;
             padding: 10px;
             opacity: 0.5;
@@ -705,8 +705,8 @@
 
         .achievement-card.unlocked {
             opacity: 1;
-            border-color: #bb86fc;
-            background: rgba(187, 134, 252, 0.1);
+            border-color: #6e9bff;
+            background: rgba(110, 155, 255, 0.1);
         }
 
         .achievement-title {
@@ -722,8 +722,8 @@
         }
 
         .quote-box {
-            background: #252525;
-            border-left: 3px solid #03dac6;
+            background: #1c2337;
+            border-left: 3px solid #ff5910;
             padding: 12px;
             border-radius: 8px;
             font-size: 0.9rem;
@@ -746,8 +746,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            background: #242424;
-            border: 1px solid #383838;
+            background: #1b2336;
+            border: 1px solid #2a344a;
             border-radius: 10px;
             padding: 8px 11px;
             margin-bottom: 10px;
@@ -756,7 +756,7 @@
         .stretch-timer-readout {
             font-size: 1.05rem;
             font-weight: 700;
-            color: #03dac6;
+            color: #ff5910;
             font-variant-numeric: tabular-nums;
         }
 
@@ -771,7 +771,7 @@
             padding: 5px 10px;
             font-size: 0.78rem;
             border-radius: 7px;
-            background: #2f2f2f;
+            background: #232c41;
             color: #e0e0e0;
             border: 1px solid #454545;
         }
@@ -783,9 +783,9 @@
         }
 
         .stretch-timer-btn.apply {
-            background: rgba(3, 218, 198, 0.16);
-            color: #03dac6;
-            border-color: rgba(3, 218, 198, 0.45);
+            background: rgba(255, 89, 16, 0.16);
+            color: #ff5910;
+            border-color: rgba(255, 89, 16, 0.45);
         }
 
         /* Untere Navigation (10 Reiter in 2 Fünferreihen) */
@@ -794,8 +794,8 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: #191919;
-            border-top: 1px solid #2f2f2f;
+            background: #13192b;
+            border-top: 1px solid #232c41;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 3px;
@@ -807,7 +807,7 @@
             width: 100%;
             min-height: 42px;
             padding: 3px 2px;
-            background: #212121;
+            background: #192033;
             color: #9a9a9a;
             border-radius: 8px;
             display: flex;
@@ -824,10 +824,10 @@
         }
 
         .nav-item.active {
-            background: rgba(3, 218, 198, 0.14);
-            color: #03dac6;
+            background: rgba(255, 89, 16, 0.14);
+            color: #ff5910;
             font-weight: 700;
-            border: 1px solid rgba(3, 218, 198, 0.35);
+            border: 1px solid rgba(255, 89, 16, 0.35);
         }
 
         .nav-icon {
@@ -840,9 +840,9 @@
             left: 50%;
             bottom: calc(114px + env(safe-area-inset-bottom));
             transform: translateX(-50%) translateY(16px);
-            background: #2c2c2c;
+            background: #21293e;
             color: #ffffff;
-            border: 1px solid #03dac6;
+            border: 1px solid #ff5910;
             padding: 9px 16px;
             border-radius: 999px;
             font-size: 0.86rem;
@@ -906,7 +906,7 @@
                     <canvas id="gymStrengthProgressCanvas" class="chart-canvas compact"></canvas>
                     <div class="chart-legend">
                         <span id="gymStrengthChartCaption">Max. Gewicht (kg) & Satzvolumen im Verlauf</span>
-                        <span id="gymStrengthProgressDelta" style="color: #03dac6; font-weight: 600;"></span>
+                        <span id="gymStrengthProgressDelta" style="color: #ff5910; font-weight: 600;"></span>
                     </div>
                 </div>
             </div>
@@ -953,7 +953,7 @@
                     <canvas id="gymCardioProgressCanvas" class="chart-canvas compact"></canvas>
                     <div class="chart-legend">
                         <span id="gymCardioChartCaption">Distanz (km) bzw. Dauer (Min.) im Verlauf</span>
-                        <span id="gymCardioProgressDelta" style="color: #03dac6; font-weight: 600;"></span>
+                        <span id="gymCardioProgressDelta" style="color: #ff5910; font-weight: 600;"></span>
                     </div>
                 </div>
             </div>
@@ -1009,7 +1009,7 @@
                     <canvas id="bwProgressCanvas" class="chart-canvas compact"></canvas>
                     <div class="chart-legend">
                         <span id="bwChartCaption">Gesamtleistung pro Einheit im Verlauf</span>
-                        <span id="bwProgressDelta" style="color: #03dac6; font-weight: 600;"></span>
+                        <span id="bwProgressDelta" style="color: #ff5910; font-weight: 600;"></span>
                     </div>
                 </div>
             </div>
@@ -1059,7 +1059,7 @@
                     <canvas id="stretchProgressCanvas" class="chart-canvas compact"></canvas>
                     <div class="chart-legend">
                         <span id="stretchChartCaption">Gesamte Dehnzeit / Leistung pro Einheit im Verlauf</span>
-                        <span id="stretchProgressDelta" style="color: #03dac6; font-weight: 600;"></span>
+                        <span id="stretchProgressDelta" style="color: #ff5910; font-weight: 600;"></span>
                     </div>
                 </div>
             </div>
@@ -1272,7 +1272,7 @@
             <div class="stats-grid">
                 <div class="stat-box">
                     <span class="stat-label">Aktive Tage</span>
-                    <span class="stat-value" style="color: #03dac6;" id="statTotalActiveDays">0</span>
+                    <span class="stat-value" style="color: #ff5910;" id="statTotalActiveDays">0</span>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Kraft-Volumen</span>
@@ -1330,7 +1330,7 @@
                 <canvas id="activityChartCanvas" class="chart-canvas"></canvas>
                 <div class="chart-legend">
                     <span id="activityChartCaption">Kombinierter Aktivitätsindex (Kraft, Cardio, Bodyweight, Laufen & Schritte)</span>
-                    <span id="activityChartHighlight" style="color: #03dac6; font-weight: 600;"></span>
+                    <span id="activityChartHighlight" style="color: #ff5910; font-weight: 600;"></span>
                 </div>
             </div>
             <p class="muted" style="font-size: 0.78rem; margin-top: 8px;">Tipp: Tippe im Chart auf einen Balken, um den jeweiligen Tag direkt im Archiv zu öffnen.</p>
@@ -1345,7 +1345,7 @@
                 <canvas id="statsExerciseChartCanvas" class="chart-canvas"></canvas>
                 <div class="chart-legend">
                     <span id="statsExerciseChartCaption">Entwicklung im Zeitverlauf</span>
-                    <span id="statsExerciseTrendBadge" style="color: #03dac6; font-weight: 600;"></span>
+                    <span id="statsExerciseTrendBadge" style="color: #ff5910; font-weight: 600;"></span>
                 </div>
             </div>
 
@@ -1378,11 +1378,11 @@
             <div class="stats-grid two">
                 <div class="stat-box">
                     <span class="stat-label">Aktuelle Serie</span>
-                    <span class="stat-value" style="color: #03dac6;" id="motCurrentStreak">0 Tage</span>
+                    <span class="stat-value" style="color: #ff5910;" id="motCurrentStreak">0 Tage</span>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Längster Rekord</span>
-                    <span class="stat-value" style="color: #bb86fc;" id="motBestStreak">0 Tage</span>
+                    <span class="stat-value" style="color: #6e9bff;" id="motBestStreak">0 Tage</span>
                 </div>
             </div>
             <div class="week-dots" id="weekMatrix"></div>
@@ -1417,9 +1417,9 @@
             <div class="chart-wrap" id="motWeightChartWrap">
                 <canvas id="motWeightChartCanvas" class="chart-canvas"></canvas>
                 <div class="chart-legend">
-                    <span><span class="legend-dot" style="background:#03dac6;"></span>Gewicht</span>
-                    <span><span class="legend-dot" style="background:#bb86fc;"></span>Zielgewicht</span>
-                    <span id="motWeightDeltaLabel" style="color:#03dac6; font-weight:600;"></span>
+                    <span><span class="legend-dot" style="background:#ff5910;"></span>Gewicht</span>
+                    <span><span class="legend-dot" style="background:#6e9bff;"></span>Zielgewicht</span>
+                    <span id="motWeightDeltaLabel" style="color:#ff5910; font-weight:600;"></span>
                 </div>
             </div>
 
@@ -1466,9 +1466,9 @@
             <div class="chart-wrap" id="profWeightChartWrap">
                 <canvas id="profWeightChartCanvas" class="chart-canvas"></canvas>
                 <div class="chart-legend">
-                    <span><span class="legend-dot" style="background:#03dac6;"></span>Gewicht</span>
-                    <span><span class="legend-dot" style="background:#bb86fc;"></span>Zielgewicht</span>
-                    <span id="profWeightDeltaLabel" style="color:#03dac6; font-weight:600;"></span>
+                    <span><span class="legend-dot" style="background:#ff5910;"></span>Gewicht</span>
+                    <span><span class="legend-dot" style="background:#6e9bff;"></span>Zielgewicht</span>
+                    <span id="profWeightDeltaLabel" style="color:#ff5910; font-weight:600;"></span>
                 </div>
             </div>
 
@@ -2319,7 +2319,7 @@
             return padTop + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH;
         }
 
-        ctx.strokeStyle = '#2a2a2a';
+        ctx.strokeStyle = '#20283c';
         ctx.lineWidth = 1;
         ctx.fillStyle = '#888888';
         ctx.font = '10px -apple-system, sans-serif';
@@ -2354,8 +2354,8 @@
 
         if (coords.length >= 2) {
             const grad = ctx.createLinearGradient(0, padTop, 0, padTop + plotH);
-            grad.addColorStop(0, 'rgba(3, 218, 198, 0.28)');
-            grad.addColorStop(1, 'rgba(3, 218, 198, 0.0)');
+            grad.addColorStop(0, 'rgba(255, 89, 16, 0.28)');
+            grad.addColorStop(1, 'rgba(255, 89, 16, 0.0)');
 
             ctx.beginPath();
             ctx.moveTo(coords[0].x, padTop + plotH);
@@ -2366,7 +2366,7 @@
             ctx.fill();
 
             ctx.beginPath();
-            ctx.strokeStyle = '#03dac6';
+            ctx.strokeStyle = '#ff5910';
             ctx.lineWidth = 2.4;
             ctx.lineJoin = 'round';
             coords.forEach((c, idx) => {
@@ -2383,14 +2383,14 @@
 
             ctx.beginPath();
             ctx.arc(c.x, c.y, isLast ? 4.8 : 3.4, 0, Math.PI * 2);
-            ctx.fillStyle = isLast ? '#ffffff' : '#03dac6';
+            ctx.fillStyle = isLast ? '#ffffff' : '#ff5910';
             ctx.fill();
             ctx.lineWidth = 2;
-            ctx.strokeStyle = '#03dac6';
+            ctx.strokeStyle = '#ff5910';
             ctx.stroke();
 
             if (isFirst || isLast || coords.length <= 6) {
-                ctx.fillStyle = isLast ? '#ffffff' : '#03dac6';
+                ctx.fillStyle = isLast ? '#ffffff' : '#ff5910';
                 ctx.font = isLast ? 'bold 10px -apple-system, sans-serif' : '10px -apple-system, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
@@ -2421,10 +2421,10 @@
             const dVol = last.totalVolume - first.totalVolume;
             const wSign = dw > 0 ? '+' : '';
             deltaEl.textContent = `Max: ${wSign}${String(dw).replace('.', ',')} kg · Vol: ${dVol > 0 ? '+' : ''}${dVol} kg`;
-            deltaEl.style.color = (dw > 0 || (dw === 0 && dVol >= 0)) ? '#03dac6' : '#cf6679';
+            deltaEl.style.color = (dw > 0 || (dw === 0 && dVol >= 0)) ? '#ff5910' : '#cf6679';
         } else if (sessions.length === 1) {
             deltaEl.textContent = `Start: ${String(sessions[0].maxWeight).replace('.', ',')} kg`;
-            deltaEl.style.color = '#03dac6';
+            deltaEl.style.color = '#ff5910';
         } else {
             deltaEl.textContent = '';
         }
@@ -2454,15 +2454,15 @@
             if (hasDistance) {
                 const dd = Number((last.distance - first.distance).toFixed(1));
                 deltaEl.textContent = `${dd > 0 ? '+' : ''}${String(dd).replace('.', ',')} km (${sessions.length} Einheiten)`;
-                deltaEl.style.color = dd >= 0 ? '#03dac6' : '#cf6679';
+                deltaEl.style.color = dd >= 0 ? '#ff5910' : '#cf6679';
             } else {
                 const dm = last.duration - first.duration;
                 deltaEl.textContent = `${dm > 0 ? '+' : ''}${dm} Min. (${sessions.length} Einheiten)`;
-                deltaEl.style.color = dm >= 0 ? '#03dac6' : '#cf6679';
+                deltaEl.style.color = dm >= 0 ? '#ff5910' : '#cf6679';
             }
         } else if (sessions.length === 1) {
             deltaEl.textContent = hasDistance ? `Start: ${String(sessions[0].distance).replace('.', ',')} km` : `Start: ${sessions[0].duration} Min.`;
-            deltaEl.style.color = '#03dac6';
+            deltaEl.style.color = '#ff5910';
         } else {
             deltaEl.textContent = '';
         }
@@ -2481,10 +2481,10 @@
         if (sessions.length >= 2) {
             const diff = sessions[sessions.length - 1].totalReps - sessions[0].totalReps;
             deltaEl.textContent = `${diff > 0 ? '+' : ''}${diff} ${unit} (${sessions.length} Sessions)`;
-            deltaEl.style.color = diff >= 0 ? '#03dac6' : '#cf6679';
+            deltaEl.style.color = diff >= 0 ? '#ff5910' : '#cf6679';
         } else if (sessions.length === 1) {
             deltaEl.textContent = `Start: ${sessions[0].totalReps} ${unit}`;
-            deltaEl.style.color = '#03dac6';
+            deltaEl.style.color = '#ff5910';
         } else {
             deltaEl.textContent = '';
         }
@@ -3232,10 +3232,10 @@
         if (sessions.length >= 2) {
             const diff = sessions[sessions.length - 1].totalReps - sessions[0].totalReps;
             deltaEl.textContent = `${diff > 0 ? '+' : ''}${diff} ${unit} (${sessions.length} Sessions)`;
-            deltaEl.style.color = diff >= 0 ? '#03dac6' : '#cf6679';
+            deltaEl.style.color = diff >= 0 ? '#ff5910' : '#cf6679';
         } else if (sessions.length === 1) {
             deltaEl.textContent = `Start: ${sessions[0].totalReps} ${unit}`;
-            deltaEl.style.color = '#03dac6';
+            deltaEl.style.color = '#ff5910';
         } else {
             deltaEl.textContent = '';
         }
@@ -3788,9 +3788,9 @@
 
         if (diff >= 0) {
             compText.textContent = `Tagesziel erreicht! +${formatInt(diff)} Schritte über dem Ziel`;
-            compText.style.color = '#03dac6';
+            compText.style.color = '#ff5910';
             diffStat.textContent = `+${formatInt(diff)}`;
-            diffStat.style.color = '#03dac6';
+            diffStat.style.color = '#ff5910';
         } else {
             compText.textContent = `Noch ${formatInt(Math.abs(diff))} Schritte bis zum Tagesziel`;
             compText.style.color = '#b0b0b0';
@@ -3823,7 +3823,7 @@
             const right = document.createElement('span');
             right.style.fontSize = '0.8rem';
             right.style.fontWeight = '600';
-            right.style.color = reached ? '#03dac6' : '#888';
+            right.style.color = reached ? '#ff5910' : '#888';
             right.textContent = reached ? '✓ Ziel erreicht' : `${Math.round((stepsVal / goal) * 100)} %`;
 
             row.append(left, right);
@@ -4394,7 +4394,7 @@
         const plotW = cssWidth - padLeft - padRight;
         const plotH = cssHeight - padTop - padBottom;
 
-        ctx.strokeStyle = '#2a2a2a';
+        ctx.strokeStyle = '#20283c';
         ctx.lineWidth = 1;
         ctx.fillStyle = '#888888';
         ctx.font = '10px -apple-system, BlinkMacSystemFont, sans-serif';
@@ -4438,9 +4438,9 @@
                 ? (selectedArchiveDate >= b.rangeStart && selectedArchiveDate <= b.dateKey)
                 : b.dateKey === selectedArchiveDate;
             if (b.value > 0) {
-                ctx.fillStyle = isSelected ? '#bb86fc' : '#03dac6';
+                ctx.fillStyle = isSelected ? '#6e9bff' : '#ff5910';
             } else {
-                ctx.fillStyle = '#292929';
+                ctx.fillStyle = '#1f273b';
             }
 
             ctx.beginPath();
@@ -4459,7 +4459,7 @@
             });
 
             if ((idx % labelInterval === 0 && (count - 1 - idx) >= labelInterval) || idx === count - 1) {
-                ctx.fillStyle = isSelected ? '#bb86fc' : '#888888';
+                ctx.fillStyle = isSelected ? '#6e9bff' : '#888888';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
                 ctx.fillText(b.label, xCenter, padTop + plotH + 7);
@@ -4588,10 +4588,10 @@
                 const dw = Number((sessions[sessions.length - 1].maxWeight - sessions[0].maxWeight).toFixed(1));
                 const dVol = sessions[sessions.length - 1].totalVolume - sessions[0].totalVolume;
                 badgeEl.textContent = `Gesamt: ${dw > 0 ? '+' : ''}${String(dw).replace('.', ',')} kg Max · ${dVol > 0 ? '+' : ''}${dVol} kg Vol.`;
-                badgeEl.style.color = (dw > 0 || (dw === 0 && dVol >= 0)) ? '#03dac6' : '#cf6679';
+                badgeEl.style.color = (dw > 0 || (dw === 0 && dVol >= 0)) ? '#ff5910' : '#cf6679';
             } else if (sessions.length === 1) {
                 badgeEl.textContent = `1 Session (${String(sessions[0].maxWeight).replace('.', ',')} kg)`;
-                badgeEl.style.color = '#03dac6';
+                badgeEl.style.color = '#ff5910';
             }
 
             for (let i = sessions.length - 1; i >= Math.max(0, sessions.length - 8); i--) {
@@ -4627,15 +4627,15 @@
                 if (hasDist) {
                     const dd = Number((last.distance - first.distance).toFixed(1));
                     badgeEl.textContent = `Gesamt: ${dd > 0 ? '+' : ''}${String(dd).replace('.', ',')} km`;
-                    badgeEl.style.color = dd >= 0 ? '#03dac6' : '#cf6679';
+                    badgeEl.style.color = dd >= 0 ? '#ff5910' : '#cf6679';
                 } else {
                     const dm = last.duration - first.duration;
                     badgeEl.textContent = `Gesamt: ${dm > 0 ? '+' : ''}${dm} Min.`;
-                    badgeEl.style.color = dm >= 0 ? '#03dac6' : '#cf6679';
+                    badgeEl.style.color = dm >= 0 ? '#ff5910' : '#cf6679';
                 }
             } else if (chartSessions.length === 1) {
                 badgeEl.textContent = '1 Einheit';
-                badgeEl.style.color = '#03dac6';
+                badgeEl.style.color = '#ff5910';
             }
 
             for (let i = sessions.length - 1; i >= Math.max(0, sessions.length - 8); i--) {
@@ -4667,10 +4667,10 @@
             if (sessions.length >= 2) {
                 const diff = sessions[sessions.length - 1].totalReps - sessions[0].totalReps;
                 badgeEl.textContent = `Gesamt: ${diff > 0 ? '+' : ''}${diff} ${unit}`;
-                badgeEl.style.color = diff >= 0 ? '#03dac6' : '#cf6679';
+                badgeEl.style.color = diff >= 0 ? '#ff5910' : '#cf6679';
             } else if (sessions.length === 1) {
                 badgeEl.textContent = `1 Session (${sessions[0].totalReps} ${unit})`;
-                badgeEl.style.color = '#03dac6';
+                badgeEl.style.color = '#ff5910';
             }
 
             for (let i = sessions.length - 1; i >= Math.max(0, sessions.length - 8); i--) {
@@ -4702,10 +4702,10 @@
             if (sessions.length >= 2) {
                 const diff = sessions[sessions.length - 1].totalReps - sessions[0].totalReps;
                 badgeEl.textContent = `Gesamt: ${diff > 0 ? '+' : ''}${diff} ${unit}`;
-                badgeEl.style.color = diff >= 0 ? '#03dac6' : '#cf6679';
+                badgeEl.style.color = diff >= 0 ? '#ff5910' : '#cf6679';
             } else if (sessions.length === 1) {
                 badgeEl.textContent = `1 Session (${sessions[0].totalReps} ${unit})`;
-                badgeEl.style.color = '#03dac6';
+                badgeEl.style.color = '#ff5910';
             }
 
             for (let i = sessions.length - 1; i >= Math.max(0, sessions.length - 8); i--) {
@@ -5202,7 +5202,7 @@
 
         if (hasAnyEntry) {
             overview.textContent = summaryParts.join(' · ');
-            overview.style.color = '#03dac6';
+            overview.style.color = '#ff5910';
         } else {
             overview.textContent = 'Keine erfassten Leistungen an diesem Tag.';
             overview.style.color = '#9e9e9e';
@@ -5329,10 +5329,10 @@
             if (points.length >= 2) {
                 const sign = change > 0 ? '+' : '';
                 deltaEl.textContent = `Veränderung: ${sign}${change.toFixed(1).replace('.', ',')} kg`;
-                deltaEl.style.color = change <= 0 ? '#03dac6' : '#cf6679';
+                deltaEl.style.color = change <= 0 ? '#ff5910' : '#cf6679';
             } else {
                 deltaEl.textContent = `Startwert: ${lastW.toFixed(1).replace('.', ',')} kg`;
-                deltaEl.style.color = '#03dac6';
+                deltaEl.style.color = '#ff5910';
             }
         }
 
@@ -5354,7 +5354,7 @@
             return padTop + plotH - ((w - yMin) / (yMax - yMin)) * plotH;
         }
 
-        ctx.strokeStyle = '#2a2a2a';
+        ctx.strokeStyle = '#20283c';
         ctx.lineWidth = 1;
         ctx.fillStyle = '#888888';
         ctx.font = '10px -apple-system, BlinkMacSystemFont, sans-serif';
@@ -5375,7 +5375,7 @@
         if (!isNaN(goalW)) {
             const goalY = yForWeight(goalW);
             ctx.save();
-            ctx.strokeStyle = '#bb86fc';
+            ctx.strokeStyle = '#6e9bff';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([5, 4]);
             ctx.beginPath();
@@ -5395,8 +5395,8 @@
 
         if (coords.length >= 2) {
             const grad = ctx.createLinearGradient(0, padTop, 0, padTop + plotH);
-            grad.addColorStop(0, 'rgba(3, 218, 198, 0.28)');
-            grad.addColorStop(1, 'rgba(3, 218, 198, 0.0)');
+            grad.addColorStop(0, 'rgba(255, 89, 16, 0.28)');
+            grad.addColorStop(1, 'rgba(255, 89, 16, 0.0)');
 
             ctx.beginPath();
             ctx.moveTo(coords[0].x, padTop + plotH);
@@ -5407,7 +5407,7 @@
             ctx.fill();
 
             ctx.beginPath();
-            ctx.strokeStyle = '#03dac6';
+            ctx.strokeStyle = '#ff5910';
             ctx.lineWidth = 2.5;
             ctx.lineJoin = 'round';
             coords.forEach((c, idx) => {
@@ -5424,14 +5424,14 @@
 
             ctx.beginPath();
             ctx.arc(c.x, c.y, isLast ? 5 : 3.5, 0, Math.PI * 2);
-            ctx.fillStyle = isLast ? '#ffffff' : '#03dac6';
+            ctx.fillStyle = isLast ? '#ffffff' : '#ff5910';
             ctx.fill();
             ctx.lineWidth = 2;
-            ctx.strokeStyle = '#03dac6';
+            ctx.strokeStyle = '#ff5910';
             ctx.stroke();
 
             if (isFirst || isLast || coords.length <= 7) {
-                ctx.fillStyle = isLast ? '#ffffff' : '#03dac6';
+                ctx.fillStyle = isLast ? '#ffffff' : '#ff5910';
                 ctx.font = isLast ? 'bold 11px -apple-system, sans-serif' : '10px -apple-system, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
