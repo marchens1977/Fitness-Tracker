@@ -25,6 +25,8 @@ die alte Version angezeigt wird.
 
 - `index.html` – die **gesamte App in einer Datei** (Aussehen, Inhalt und Programmlogik).
 - `CLAUDE.md` – dieses Tagebuch.
+- `android/` – eigene **Android-App** (Schrittzähler), siehe Abschnitt „Android-App“.
+- `.github/workflows/android-app.yml` – baut die App-Datei (APK) automatisch bei GitHub.
 
 Wichtige Details in `index.html`:
 - Gespeicherte Daten (localStorage-Schlüssel, alle mit Endung `V2`), z. B.
@@ -41,6 +43,26 @@ Wichtige Details in `index.html`:
 - Die „Sync“-Knöpfe bei adidas Running und Yazio zeigen bisher nur einen Hinweis
   („bereit für Firebase-Verbindung“) – eine echte Verbindung gibt es noch nicht.
 
+### Android-App (Ordner `android/`)
+
+- Kleine App (Java, ohne Zusatz-Bibliotheken), die die Online-Seite anzeigt
+  (`MainActivity.java`) und den Schrittzähler-Chip des Handys ausliest.
+- `StepStore.java` merkt sich Schritte pro Tag (Differenz zwischen zwei Ablesungen;
+  Handy-Neustart wird erkannt). Gezählt wird erst **ab der Installation**.
+- Im Hintergrund: Ablesen ca. alle 15 Min. (`StepJobService.java`) und kurz vor
+  Mitternacht + nach Neustart (`StepAlarmReceiver.java`). Steps gehen nicht verloren,
+  wenn Android das verzögert – der Chip zählt immer weiter.
+- Übergabe an die Webseite: `window.FitnessNativeApp.onSteps([{date, steps}], zustand)`
+  in `index.html` („größerer Wert gewinnt“). Backup speichern ruft in der App
+  `window.AndroidApp.saveFile(...)` auf (Speicherort wählen).
+- Download der fertigen App:
+  https://github.com/marchens1977/Fitness-Tracker/releases/latest/download/FitnessTracker.apk
+  (wird bei jeder Änderung an `android/` auf `main` neu gebaut).
+- Signatur-Schlüssel `android/app/app-signing.keystore` liegt bewusst im Projekt
+  (Passwort steht in `app/build.gradle`), damit Updates ohne Neuinstallation
+  klappen. Bei Neuinstallation (Deinstallieren) wären die App-Daten weg →
+  vorher Backup!
+
 ## 3. Regeln und Entscheidungen
 
 - Alles bleibt in **einer Datei** (`index.html`), damit die App einfach zu öffnen ist.
@@ -55,10 +77,14 @@ Wichtige Details in `index.html`:
 - 16.11.2026 – Projekt-Tagebuch `CLAUDE.md` angelegt (PR #1).
 - 17.11.2026 – Online-Adresse (GitHub Pages) im Tagebuch ergänzt.
 - 17.11.2026 – Entscheidung: eigener Schrittzähler als Android-App (Plan B, siehe unten).
+- 17.11.2026 – Android-App gebaut (Ordner `android/`, automatischer APK-Bau).
+  **Noch nicht vom Nutzer getestet.**
 
 ## 5. Offene Ideen / nächste Schritte
 
-- **Als Nächstes: eigener Schrittzähler (Plan B), vom Nutzer gewünscht.**
+- **Als Nächstes: Nutzer installiert und testet die Android-App** (APK-Link oben).
+  Danach Daten per Backup aus Chrome in die App übertragen.
+- (Erledigt, Hintergrund zur Entscheidung:) eigener Schrittzähler (Plan B).
   - Hintergrund: Eine Webseite darf in Chrome nur zählen, solange sie offen und
     der Bildschirm an ist. Den vorhandenen „Live-Zähler“ (`toggleMotionStepCounter`,
     `handleDeviceMotion` in `index.html`) gibt es schon, er ist aber recht ungenau.
