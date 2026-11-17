@@ -54,10 +54,25 @@ Wichtige Details in `index.html`:
 - 15.11.2026 – App-Datei `index.html` vom Nutzer hochgeladen (erster Stand).
 - 16.11.2026 – Projekt-Tagebuch `CLAUDE.md` angelegt (PR #1).
 - 17.11.2026 – Online-Adresse (GitHub Pages) im Tagebuch ergänzt.
+- 17.11.2026 – Entscheidung: eigener Schrittzähler als Android-App (Plan B, siehe unten).
 
 ## 5. Offene Ideen / nächste Schritte
 
-- Echte Anbindung für adidas Running / Yazio / Schrittzähler (aktuell nur Import per Datei).
+- **Als Nächstes: eigener Schrittzähler (Plan B), vom Nutzer gewünscht.**
+  - Hintergrund: Eine Webseite darf in Chrome nur zählen, solange sie offen und
+    der Bildschirm an ist. Den vorhandenen „Live-Zähler“ (`toggleMotionStepCounter`,
+    `handleDeviceMotion` in `index.html`) gibt es schon, er ist aber recht ungenau.
+  - Plan: kleine eigene Android-App, die die Webseite anzeigt und den eingebauten
+    Schrittzähler-Chip des Handys (Android-Sensor „Step Counter“) direkt ausliest,
+    ganz ohne Samsung Health / Google Health Connect. Die Schritte kommen über
+    `window.FitnessHealthBridge.ingest(...)` in die App.
+  - Bau der Installationsdatei (APK) automatisch über GitHub Actions; der Nutzer
+    installiert sie selbst („Apps aus unbekannten Quellen erlauben“).
+  - Daten von der Webseite einmalig per Backup in die App übertragen
+    (localStorage ist pro Webseite/App getrennt).
+  - Schätzung: Claude bereitet vor (ca. 1–2 Std., ohne Nutzer); Nutzer braucht
+    ca. 30–45 Min. zum Installieren und Testen, evtl. 1–2 kurze Korrekturrunden.
+- Echte Anbindung für adidas Running / Yazio (aktuell nur Import per Datei).
 
 ## 6. Hinweise zur Zusammenarbeit
 
