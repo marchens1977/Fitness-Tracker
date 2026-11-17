@@ -27,6 +27,9 @@ final class StepStore {
     private static final String KEY_LAST_BOOT = "lastBoot";
     private static final String KEY_HISTORY = "history";
     private static final String KEY_LAST_UPDATE = "lastUpdate";
+    private static final String KEY_REPORTED_DATE = "reportedDate";
+    private static final String KEY_REPORTED_STEPS = "reportedSteps";
+    private static final String KEY_GOAL = "goal";
     private static final int KEEP_DAYS = 90;
     private static final long MAX_PLAUSIBLE_DELTA = 150000;
 
@@ -65,7 +68,32 @@ final class StepStore {
                 .putString(KEY_HISTORY, history.toString())
                 .putLong(KEY_LAST_UPDATE, System.currentTimeMillis())
                 .apply();
+        StepWidget.updateAll(context);
         return delta > 0;
+    }
+
+    /** Die Webseite meldet ihren angezeigten Stand (inkl. manueller Einträge) und das Ziel. */
+    static synchronized void saveReported(Context context, String date, long steps, int goal) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        SharedPreferences.Editor edit = prefs.edit()
+                .putString(KEY_REPORTED_DATE, date)
+                .putLong(KEY_REPORTED_STEPS, Math.max(0, steps));
+        if (goal > 0) edit.putInt(KEY_GOAL, goal);
+        edit.apply();
+    }
+
+    /** Schritte heute fürs Widget: größerer Wert aus Chip und Webseite. */
+    static synchronized long todaySteps(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String today = LocalDate.now().toString();
+        long fromChip = loadHistory(prefs).optLong(today, 0);
+        long fromPage = today.equals(prefs.getString(KEY_REPORTED_DATE, ""))
+                ? prefs.getLong(KEY_REPORTED_STEPS, 0) : 0;
+        return Math.max(fromChip, fromPage);
+    }
+
+    static int goal(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt(KEY_GOAL, 10000);
     }
 
     /** Alle Tage als JSON-Liste: [{"date":"2026-11-17","steps":1234}, ...] */

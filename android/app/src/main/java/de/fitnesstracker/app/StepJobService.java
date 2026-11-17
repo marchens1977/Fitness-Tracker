@@ -25,7 +25,10 @@ public class StepJobService extends JobService {
     @Override
     public boolean onStartJob(JobParameters params) {
         StepAlarmReceiver.scheduleNext(this);
-        StepReader.readOnce(this, () -> jobFinished(params, false));
+        StepReader.readOnce(this, () -> {
+            StepWidget.updateAll(this); // auch nach Mitternacht auf "heute" umstellen
+            jobFinished(params, false);
+        });
         return true;
     }
 

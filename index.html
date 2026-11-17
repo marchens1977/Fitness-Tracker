@@ -3773,6 +3773,11 @@
         const diff = currentSteps - goal;
         const estKm = (currentSteps * 0.00075).toFixed(1).replace('.', ',');
 
+        // Android-App: Stand und Ziel an das Startbildschirm-Widget melden
+        if (window.AndroidApp && typeof window.AndroidApp.reportSteps === 'function') {
+            window.AndroidApp.reportSteps(today, currentSteps, goal);
+        }
+
         document.getElementById('stepsTodayCount').textContent = formatInt(currentSteps);
         document.getElementById('stepsGoalDisplay').textContent = formatInt(goal);
         const stepGoalField = document.getElementById('stepGoalInput');

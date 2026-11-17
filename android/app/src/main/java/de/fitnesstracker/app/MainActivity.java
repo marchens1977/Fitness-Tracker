@@ -305,6 +305,12 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
 
         @JavascriptInterface
+        public void reportSteps(String date, double steps, double goal) {
+            StepStore.saveReported(MainActivity.this, date, Math.round(steps), (int) Math.round(goal));
+            StepWidget.updateAll(MainActivity.this);
+        }
+
+        @JavascriptInterface
         public String getSteps() {
             return StepStore.historyJson(MainActivity.this);
         }
