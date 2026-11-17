@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Hantel in Türkis, schräg gestellt (Bereich 108x108, sichtbar ist die Mitte) -->
+<!-- Hantel in Mets-Orange, schräg gestellt (Bereich 108x108, sichtbar ist die Mitte) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -7,14 +7,14 @@
     android:viewportHeight="108">
     <group android:rotation="-35" android:scaleX="1.2" android:scaleY="1.2" android:pivotX="54" android:pivotY="54">
         <!-- bar -->
-        <path android:fillColor="#03DAC6" android:pathData="M37.5,51.5 H70.5 A1.5,1.5 0 0 1 72,53.0 V55.0 A1.5,1.5 0 0 1 70.5,56.5 H37.5 A1.5,1.5 0 0 1 36,55.0 V53.0 A1.5,1.5 0 0 1 37.5,51.5 Z" />
+        <path android:fillColor="#FF5910" android:pathData="M37.5,51.5 H70.5 A1.5,1.5 0 0 1 72,53.0 V55.0 A1.5,1.5 0 0 1 70.5,56.5 H37.5 A1.5,1.5 0 0 1 36,55.0 V53.0 A1.5,1.5 0 0 1 37.5,51.5 Z" />
         <!-- inner plate left -->
-        <path android:fillColor="#03DAC6" android:pathData="M39.5,37 H41.5 A2.5,2.5 0 0 1 44,39.5 V68.5 A2.5,2.5 0 0 1 41.5,71 H39.5 A2.5,2.5 0 0 1 37,68.5 V39.5 A2.5,2.5 0 0 1 39.5,37 Z" />
+        <path android:fillColor="#FF5910" android:pathData="M39.5,37 H41.5 A2.5,2.5 0 0 1 44,39.5 V68.5 A2.5,2.5 0 0 1 41.5,71 H39.5 A2.5,2.5 0 0 1 37,68.5 V39.5 A2.5,2.5 0 0 1 39.5,37 Z" />
         <!-- outer plate left -->
-        <path android:fillColor="#03DAC6" android:pathData="M32.0,42 H33.0 A2.5,2.5 0 0 1 35.5,44.5 V63.5 A2.5,2.5 0 0 1 33.0,66 H32.0 A2.5,2.5 0 0 1 29.5,63.5 V44.5 A2.5,2.5 0 0 1 32.0,42 Z" />
+        <path android:fillColor="#FF5910" android:pathData="M32.0,42 H33.0 A2.5,2.5 0 0 1 35.5,44.5 V63.5 A2.5,2.5 0 0 1 33.0,66 H32.0 A2.5,2.5 0 0 1 29.5,63.5 V44.5 A2.5,2.5 0 0 1 32.0,42 Z" />
         <!-- inner plate right -->
-        <path android:fillColor="#03DAC6" android:pathData="M66.5,37 H68.5 A2.5,2.5 0 0 1 71,39.5 V68.5 A2.5,2.5 0 0 1 68.5,71 H66.5 A2.5,2.5 0 0 1 64,68.5 V39.5 A2.5,2.5 0 0 1 66.5,37 Z" />
+        <path android:fillColor="#FF5910" android:pathData="M66.5,37 H68.5 A2.5,2.5 0 0 1 71,39.5 V68.5 A2.5,2.5 0 0 1 68.5,71 H66.5 A2.5,2.5 0 0 1 64,68.5 V39.5 A2.5,2.5 0 0 1 66.5,37 Z" />
         <!-- outer plate right -->
-        <path android:fillColor="#03DAC6" android:pathData="M75.0,42 H76.0 A2.5,2.5 0 0 1 78.5,44.5 V63.5 A2.5,2.5 0 0 1 76.0,66 H75.0 A2.5,2.5 0 0 1 72.5,63.5 V44.5 A2.5,2.5 0 0 1 75.0,42 Z" />
+        <path android:fillColor="#FF5910" android:pathData="M75.0,42 H76.0 A2.5,2.5 0 0 1 78.5,44.5 V63.5 A2.5,2.5 0 0 1 76.0,66 H75.0 A2.5,2.5 0 0 1 72.5,63.5 V44.5 A2.5,2.5 0 0 1 75.0,42 Z" />
     </group>
 </vector>
