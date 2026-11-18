@@ -27,6 +27,7 @@ die alte Version angezeigt wird.
 - `CLAUDE.md` – dieses Tagebuch.
 - `android/` – eigene **Android-App** (Schrittzähler), siehe Abschnitt „Android-App“.
 - `.github/workflows/android-app.yml` – baut die App-Datei (APK) automatisch bei GitHub.
+- `werkzeuge/` – Prüf- und Hilfsprogramme (siehe Abschnitt „Prüfungen und Werkzeuge“).
 
 Wichtige Details in `index.html`:
 - Gespeicherte Daten (localStorage-Schlüssel, alle mit Endung `V2`), z. B.
@@ -67,6 +68,21 @@ Wichtige Details in `index.html`:
   klappen. Bei Neuinstallation (Deinstallieren) wären die App-Daten weg →
   vorher Backup!
 
+### Prüfungen und Werkzeuge (Ordner `werkzeuge/`)
+
+- `bash werkzeuge/pruefen.sh` – prüft die Web-App: JavaScript auf Schreibfehler
+  (`node --check`), dann Seite im Browser öffnen und durch Startseite, Schritte,
+  Statistik, Motivation, Krafttraining klicken. Meldet Programmfehler der Seite
+  (Exit-Code 1) und speichert Bildschirmfotos (Pfad wird angezeigt).
+- `node werkzeuge/screenshots.js [Ordner]` – nur die Bildschirmfotos/Fehlerprüfung.
+  Braucht Node und Playwright mit Chromium (in Claudes Cloud-Umgebung vorhanden).
+- Android-App: wird bei jeder Änderung von GitHub gebaut (Workflow oben) – ein
+  erfolgreicher Bau ist die Prüfung, dass der Code übersetzbar ist.
+- **Tests, die nur der Nutzer machen kann** (echtes Handy):
+  - Zählt die App im Hintergrund, landen Schritte am richtigen Tag (Mitternacht)?
+  - Aktualisiert sich das Widget (ca. alle 15 Min.)?
+  - Backup speichern/laden in der App (Speicherort-Auswahl).
+
 ## 3. Regeln und Entscheidungen
 
 - Alles bleibt in **einer Datei** (`index.html`), damit die App einfach zu öffnen ist.
@@ -76,6 +92,18 @@ Wichtige Details in `index.html`:
 - Daten bleiben lokal auf dem Gerät; Sicherung über Backup-Datei.
 - Keine persönlichen oder geheimen Daten (E-Mail, Passwörter, API-Schlüssel) ins
   Projekt schreiben.
+- **Hilfsprogramme und Tests gehören ins Projekt** (Wunsch des Nutzers):
+  1. Automatische Prüfungen (Tests) und Hilfsprogramme, die über eine einzelne
+     Aufgabe hinaus nützlich sind, werden im Projekt gespeichert (Ordner
+     `werkzeuge/` oder `test/`) – nicht nur im Arbeitsbereich der Sitzung, der beim
+     Archivieren verloren geht.
+  2. Im Tagebuch steht, wie man sie startet und was sie prüfen.
+  3. Nach jeder Code-Änderung die vorhandenen Prüfungen laufen lassen; bei neuen
+     Funktionen passende Prüfpunkte ergänzen.
+  4. Gibt es noch keine automatische Prüfung, bei der nächsten Code-Änderung eine
+     einfache anlegen.
+  5. Was Claude nicht selbst testen kann (echte Anmeldungen, das echte Handy, den
+     Raspberry Pi), im Tagebuch als Test für den Nutzer vermerken.
 
 ## 4. Verlauf
 
@@ -93,6 +121,8 @@ Wichtige Details in `index.html`:
   (`android/app/src/main/res/drawable/ic_launcher_foreground.xml`).
 - 17.11.2026 – Ganze App auf Mets-Farben umgestellt (vorher Türkis/Lila/Grau).
 - 17.11.2026 – Startbildschirm-Widget „Schritte heute“ eingebaut.
+- 18.11.2026 – Regel „Hilfsprogramme und Tests gehören ins Projekt“ übernommen;
+  vorhandene Prüfprogramme nach `werkzeuge/` gesichert.
 
 ## 5. Offene Ideen / nächste Schritte
 
