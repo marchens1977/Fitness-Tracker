@@ -47,6 +47,7 @@ Wichtige Details in `index.html`:
 
 ### Android-App (Ordner `android/`)
 
+- Name unter dem Symbol: **„Fitness-Tracker“** (`res/values/strings.xml`, Wunsch des Nutzers 19.11.2026).
 - Kleine App (Java, ohne Zusatz-Bibliotheken), die die Online-Seite anzeigt
   (`MainActivity.java`) und den Schrittzähler-Chip des Handys ausliest.
 - `StepStore.java` merkt sich Schritte pro Tag (Differenz zwischen zwei Ablesungen;
@@ -113,6 +114,7 @@ Wichtige Details in `index.html`:
   - [ ] Beim nächsten App-Update: Beim Öffnen erscheint „Update verfügbar“ → „Jetzt herunterladen“ →
         Download im Browser → Datei antippen → „Aktualisieren“ → Schritte und Trainings sind noch da.
   - [ ] Play Protect blockiert die neue Version nicht („App scannen“ reicht).
+  - [ ] Nach dem nächsten Update steht unter dem App-Symbol „Fitness-Tracker“ (evtl. „Fitness-Trac…“, wenn zu lang).
 
 ## 3. Regeln und Entscheidungen
 
@@ -158,6 +160,7 @@ Wichtige Details in `index.html`:
   Knopf „Nach Updates suchen“ im Profil unter „Datensicherung“ (es gibt keine Einstellungs-Seite;
   Ort vom Nutzer gewählt), automatische Suche beim Start. Versionsschema `app-v1.0.N` war schon
   einheitlich, nichts umbenannt. Tests in `test/`.
+- 19.11.2026 – Nutzer: Update-Suche funktioniert. Name unter dem App-Symbol „Fitness“ → „Fitness-Tracker“.
 
 ## 5. Offene Ideen / nächste Schritte
 
