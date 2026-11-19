@@ -1512,6 +1512,13 @@
             </div>
             <input type="file" id="importFile" accept=".json,application/json" style="display: none;" onchange="importBackup(event)">
         </div>
+
+        <!-- Nur in der Android-App sichtbar (in Chrome versteckt) -->
+        <div class="card" id="appUpdateCard" style="display: none;">
+            <h2>App-Version &amp; Updates</h2>
+            <p class="muted" id="appVersionLabel" style="margin-bottom: 10px;">App-Version ?</p>
+            <button type="button" class="btn-secondary" onclick="checkAppUpdate()">Nach Updates suchen</button>
+        </div>
     </section>
 
     <!-- FESTE NAVIGATION UNTEN (9 REITER IN 3 DREIERREIHEN) -->
@@ -6367,6 +6374,32 @@
         renderStatsAndArchive();
         renderMotivation();
         renderProfile();
+        showAppUpdateCard();
+    }
+
+    // In der Android-App: Version und Knopf „Nach Updates suchen“ im Profil zeigen.
+    // Die eigentliche Suche (GitHub-Release, Download der neuen APK) macht die App selbst
+    // (android/.../UpdateChecker.java). In Chrome gibt es window.AndroidApp nicht → Karte bleibt versteckt.
+    function hasAppUpdate() {
+        return !!(window.AndroidApp && typeof window.AndroidApp.checkUpdate === 'function');
+    }
+
+    function showAppUpdateCard() {
+        const card = document.getElementById('appUpdateCard');
+        if (!card) return;
+        if (!hasAppUpdate()) {
+            card.style.display = 'none';
+            return;
+        }
+        let version = '';
+        try { version = window.AndroidApp.getVersion(); } catch (e) {}
+        document.getElementById('appVersionLabel').textContent = 'App-Version ' + (version || '?');
+        card.style.display = '';
+    }
+
+    function checkAppUpdate() {
+        if (!hasAppUpdate()) return;
+        window.AndroidApp.checkUpdate();
     }
 </script>
 

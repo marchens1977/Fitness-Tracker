@@ -28,6 +28,7 @@ die alte Version angezeigt wird.
 - `android/` – eigene **Android-App** (Schrittzähler), siehe Abschnitt „Android-App“.
 - `.github/workflows/android-app.yml` – baut die App-Datei (APK) automatisch bei GitHub.
 - `werkzeuge/` – Prüf- und Hilfsprogramme (siehe Abschnitt „Prüfungen und Werkzeuge“).
+- `test/` – automatische Prüfungen der Update-Suche.
 
 Wichtige Details in `index.html`:
 - Gespeicherte Daten (localStorage-Schlüssel, alle mit Endung `V2`), z. B.
@@ -63,6 +64,18 @@ Wichtige Details in `index.html`:
 - Download der fertigen App:
   https://github.com/marchens1977/Fitness-Tracker/releases/latest/download/FitnessTracker.apk
   (wird bei jeder Änderung an `android/` auf `main` neu gebaut).
+- **Update-Suche** (ab App 1.0.9 bzw. der ersten Version nach dem 19.11.2026, übernommen aus dem
+  Fisch-Fang-Tracker): `UpdateChecker.java` fragt beim Start und beim Zurückkehren in die App
+  (höchstens 1x pro Stunde) bei GitHub das neueste Release ab. Ist es neuer, erscheint
+  „Update verfügbar“ → „Jetzt herunterladen“ lädt die APK im Browser → auf die Datei tippen →
+  „Aktualisieren“. Im Reiter **Profil** steht unter „Datensicherung“ die Karte
+  „App-Version & Updates“ mit Knopf **„Nach Updates suchen“** (nur in der App sichtbar, nicht in
+  Chrome; Webseite ruft `AndroidApp.getVersion()` / `AndroidApp.checkUpdate()`).
+  - Versionsnummern: Release-Name `app-v1.0.N`, App-Version `1.0.N` (N = Bau-Nummer von GitHub,
+    `versionCode` = N). Verglichen wird nur N; Regeln in `UpdateVersion.java` (getestet).
+  - **Keine Selbst-Installation:** Die Erlaubnis `REQUEST_INSTALL_PACKAGES` darf NICHT in die App
+    (beim Fisch-Fang-Tracker hat Play Protect die App deshalb als „schädlich“ blockiert).
+  - Kein Schlüssel nötig: Die GitHub-Abfrage ist öffentlich.
 - Signatur-Schlüssel `android/app/app-signing.keystore` liegt bewusst im Projekt
   (Passwort steht in `app/build.gradle`), damit Updates ohne Neuinstallation
   klappen. Bei Neuinstallation (Deinstallieren) wären die App-Daten weg →
@@ -74,6 +87,15 @@ Wichtige Details in `index.html`:
   (`node --check`), dann Seite im Browser öffnen und durch Startseite, Schritte,
   Statistik, Motivation, Krafttraining klicken. Meldet Programmfehler der Seite
   (Exit-Code 1) und speichert Bildschirmfotos (Pfad wird angezeigt).
+- `python3 test/update_pruefung.py` – prüft die Update-Suche: Release-Name im Workflow, App-Version
+  und `UpdateVersion.java` passen zusammen; gleiche APK-Datei; keine Erlaubnis
+  `REQUEST_INSTALL_PACKAGES`; kein Schlüssel im Code; startet den Java-Test
+  `test/UpdateVersionTest.java` (z. B. „app-v1.0.10“ → 10, „10 ist neuer als 9“); fragt zum Schluss
+  echt bei GitHub das neueste Release ab (ohne Internet nur Hinweis).
+- `node test/update_web.js [Ordner]` – spielt im Browser die Android-App nach: Update-Karte im Profil
+  ist in Chrome versteckt, in der App sichtbar mit Version, Knopf ruft die App; alte App ohne
+  Update-Funktion → Karte versteckt. Speichert `s-profil-update.png`.
+- Beide laufen automatisch in `bash werkzeuge/pruefen.sh` mit.
 - `node werkzeuge/screenshots.js [Ordner]` – nur die Bildschirmfotos/Fehlerprüfung.
   Braucht Node und Playwright mit Chromium (in Claudes Cloud-Umgebung vorhanden).
 - Android-App: wird bei jeder Änderung von GitHub gebaut (Workflow oben) – ein
@@ -82,6 +104,15 @@ Wichtige Details in `index.html`:
   - Zählt die App im Hintergrund, landen Schritte am richtigen Tag (Mitternacht)?
   - Aktualisiert sich das Widget (ca. alle 15 Min.)?
   - Backup speichern/laden in der App (Speicherort-Auswahl).
+- **Test-Liste Update-Suche** (zum Abhaken am Handy):
+  - [ ] Neue APK einmal von Hand installieren (Link oben) – die alte 1.0.8 kann noch nicht selbst suchen.
+  - [ ] App öffnen → Reiter „Profil“ → ganz unten Karte „App-Version & Updates“ mit „App-Version 1.0.N“.
+  - [ ] „Nach Updates suchen“ tippen → Meldung „Du hast schon die neueste Version (1.0.N)“.
+  - [ ] Flugmodus an → „Nach Updates suchen“ → Meldung „Update-Suche nicht möglich. Bitte Internet prüfen.“
+  - [ ] In Chrome (ohne App) ist die Karte NICHT zu sehen.
+  - [ ] Beim nächsten App-Update: Beim Öffnen erscheint „Update verfügbar“ → „Jetzt herunterladen“ →
+        Download im Browser → Datei antippen → „Aktualisieren“ → Schritte und Trainings sind noch da.
+  - [ ] Play Protect blockiert die neue Version nicht („App scannen“ reicht).
 
 ## 3. Regeln und Entscheidungen
 
@@ -123,9 +154,15 @@ Wichtige Details in `index.html`:
 - 17.11.2026 – Startbildschirm-Widget „Schritte heute“ eingebaut.
 - 18.11.2026 – Regel „Hilfsprogramme und Tests gehören ins Projekt“ übernommen;
   vorhandene Prüfprogramme nach `werkzeuge/` gesichert.
+- 19.11.2026 – Update-Suche aus dem Fisch-Fang-Tracker übernommen (Wunsch des Nutzers):
+  Knopf „Nach Updates suchen“ im Profil unter „Datensicherung“ (es gibt keine Einstellungs-Seite;
+  Ort vom Nutzer gewählt), automatische Suche beim Start. Versionsschema `app-v1.0.N` war schon
+  einheitlich, nichts umbenannt. Tests in `test/`.
 
 ## 5. Offene Ideen / nächste Schritte
 
+- **Update-Suche am Handy testen** (Test-Liste oben). Ungetestet sind: Fenster/Meldungen der App,
+  Download im Browser, Installation über die alte Version – das geht nur am echten Handy.
 - **Als Nächstes: Hintergrund-Zählen prüfen** (18.11.): Zählt die App, während sie
   geschlossen ist? Landen Abend-Schritte beim richtigen Tag (Mitternacht)?
 - Bei Zeitschätzungen künftig „wahrscheinlich X, schlimmstenfalls Y“ angeben
