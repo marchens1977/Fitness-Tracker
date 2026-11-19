@@ -56,6 +56,9 @@ pruefe("PackageInstaller" not in checker, "Keine Selbst-Installation, Download n
 pruefe("INTERNET" in manifest, "Internet-Erlaubnis vorhanden (für die Abfrage bei GitHub)")
 pruefe(not re.search(r"(?i)(token|authorization|password)", checker), "Kein Schlüssel/Passwort im Update-Code")
 
+print("App-Name:")
+pruefe('<string name="app_name">Fitness-Tracker</string>' in lies("android/app/src/main/res/values/strings.xml"),
+       "Name unter dem App-Symbol ist „Fitness-Tracker“")
 print("Anbindung App <-> Webseite:")
 pruefe(main.count("updates.autoCheck()") >= 2, "App sucht beim Start und beim Zurückkehren von selbst")
 pruefe("public String getVersion()" in main and "public void checkUpdate()" in main,
