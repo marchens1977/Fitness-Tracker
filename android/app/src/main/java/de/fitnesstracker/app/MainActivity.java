@@ -59,6 +59,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private boolean pageReady = false;
     private boolean pushScheduled = false;
     private boolean triedOfflineCopy = false;
+    private UpdateChecker updates;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +87,9 @@ public class MainActivity extends Activity implements SensorEventListener {
             webView.loadUrl(APP_URL);
         }
 
+        updates = new UpdateChecker(this);
+        updates.autoCheck(); // von selbst nach Update suchen (höchstens 1x pro Stunde)
+
         StepJobService.schedule(this);
         StepAlarmReceiver.scheduleNext(this);
         if (stepSensor != null && !StepReader.hasPermission(this)) {
@@ -104,6 +108,9 @@ public class MainActivity extends Activity implements SensorEventListener {
         super.onResume();
         startListening();
         schedulePush();
+        if (updates != null) {
+            updates.autoCheck();
+        }
     }
 
     @Override
@@ -318,6 +325,18 @@ public class MainActivity extends Activity implements SensorEventListener {
         @JavascriptInterface
         public String getSensorState() {
             return sensorState();
+        }
+
+        /** App-Version für die Anzeige im Profil (z. B. „1.0.9“). */
+        @JavascriptInterface
+        public String getVersion() {
+            return updates.currentVersionName();
+        }
+
+        /** Knopf „Nach Updates suchen“ im Profil. */
+        @JavascriptInterface
+        public void checkUpdate() {
+            handler.post(() -> updates.check(true));
         }
     }
 }
