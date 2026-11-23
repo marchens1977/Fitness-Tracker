@@ -1880,10 +1880,12 @@
             <h2>Erinnerungen</h2>
             <p class="muted" style="font-size: 0.85rem; margin-top: 0;">Die App erinnert dich per Benachrichtigung. Die Uhrzeit ist ungefähr (Android verschiebt sie manchmal um ein paar Minuten).</p>
             <div id="reminderRows"></div>
+            <p class="muted" id="remExactHint" style="font-size: 0.8rem; display: none;">Hinweis: Android erlaubt der App keine pünktlichen Wecker – Erinnerungen können bis zu 10 Minuten später kommen.</p>
             <p class="muted" id="remUpdateHint" style="font-size: 0.8rem; display: none;">Für „Serie retten“, „Tageswerte“, „Check-in“ und „Backup“ bitte die App aktualisieren (Profil → „Nach Updates suchen“).</p>
             <button type="button" onclick="saveReminders()">Erinnerungen speichern</button>
             <p id="remStatus" style="font-size: 0.85rem; margin-bottom: 0;"></p>
             <button type="button" class="btn-secondary" id="remSettingsBtn" style="display: none;" onclick="window.AndroidApp.openNotificationSettings()">Benachrichtigungen in Android erlauben</button>
+            <button type="button" class="btn-secondary" id="remTestBtn" style="display: none; margin-top: 8px;" onclick="sendTestReminder()">Test-Benachrichtigung senden</button>
         </div>
     </section>
 
@@ -6838,6 +6840,24 @@
 
         function addDaysKey(key, n) { return fromDay(toDay(key) + n); }
 
+        // Warum eine Erinnerung heute nicht kommt (für die Anzeige im Profil)
+        const REMINDER_SKIP_REASON = {
+            weigh: 'heute schon gewogen', training: 'heute keine offene Einheit im Plan',
+            streak: 'heute schon aktiv oder Ruhetag', evening: 'heute schon eingetragen',
+            checkin: 'kein Check-in fällig', backup: 'Backup ist aktuell'
+        };
+
+        // Status einer Erinnerung für heute: { due, text }. nowHHMM z. B. "11:40"
+        function reminderTodayStatus(r, today, nowHHMM) {
+            if (!r.on) return { due: false, text: 'aus' };
+            const weekdayToday = ((new Date(toDay(today) * 86400000).getUTCDay() + 6) % 7) + 1; // 1 = Mo
+            if (r.weekday && r.weekday !== weekdayToday) return { due: false, text: `nächste: sonntags ${r.time}` };
+            const notToday = (r.onlyOn && !r.onlyOn.includes(today)) || (r.skipOn || []).includes(today);
+            if (notToday) return { due: false, text: `heute nicht nötig (${REMINDER_SKIP_REASON[r.id] || 'kein Anlass'})` };
+            if (nowHHMM && r.time <= nowHHMM) return { due: false, text: `heute ${r.time} (Uhrzeit vorbei) · nächste: morgen` };
+            return { due: true, text: `kommt heute um ${r.time}` };
+        }
+
         // state: { today, settings: {id: {on, time}}, lastWeighDate, openTrainingDays: [{date, title}],
         //          nutritionDates: [], activeDates: [], restDates: [], streak, plan: {endDate, checkinDone} | null,
         //          lastBackup }
@@ -7010,7 +7030,7 @@
             { name: 'Dehnen: Oberschenkel, Brust, Rücken', time: '2 Min.', tip: 'Ruhig atmen – geschafft!' }
         ];
 
-        return { REMINDER_DEFS, buildReminders, activeDays, restDaySet, activityStreak, simpleStreak, RECORDS, planExerciseMetric, maxNumber, collectEntries, records, newRecords, seenFrom, MINI_SESSION, weekdayIndex };
+        return { REMINDER_DEFS, buildReminders, reminderTodayStatus, activeDays, restDaySet, activityStreak, simpleStreak, RECORDS, planExerciseMetric, maxNumber, collectEntries, records, newRecords, seenFrom, MINI_SESSION, weekdayIndex };
     })();
     /* MOTIV-CALC-END */
 
@@ -8354,6 +8374,18 @@
         showToast(Object.values(r).some(x => x.on) ? 'Erinnerungen gespeichert.' : 'Erinnerungen ausgeschaltet.');
     }
 
+    function sendTestReminder() {
+        let res = 'off';
+        try { res = window.AndroidApp.sendTestReminder(); } catch (e) {}
+        showToast(res === 'ok' ? 'Test gesendet – schau oben in die Benachrichtigungen.' : 'Benachrichtigungen sind aus – bitte erlauben.');
+        renderReminderCard(res === 'ok' ? 'ok' : 'off');
+    }
+
+    function nowHHMM() {
+        const d = new Date();
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+
     function renderReminderCard(stateFromSave) {
         const card = document.getElementById('reminderCard');
         if (!hasReminders()) { card.style.display = 'none'; return; }
@@ -8362,6 +8394,8 @@
         const set = getReminderSettings();
         const rows = document.getElementById('reminderRows');
         rows.innerHTML = '';
+        const today = getLocalDateKey();
+        const payload = api >= 2 ? buildReminderPayload() : null;
         MotivCalc.REMINDER_DEFS.forEach(def => {
             const supported = api >= 2 || def.id === 'weigh' || def.id === 'training';
             const box = el('div', 'plan-day');
@@ -8383,6 +8417,15 @@
             time.disabled = !supported;
             grid.append(sel, time);
             box.appendChild(grid);
+            if (payload && set[def.id].on) {
+                const r = payload.reminders.find(x => x.id === def.id);
+                const stt = MotivCalc.reminderTodayStatus(r, today, nowHHMM());
+                const line = el('div', 'plan-ex-expl', `Heute: ${stt.text}`);
+                line.id = `rem_${def.id}_status`;
+                line.style.color = stt.due ? '#3ddc84' : '#ffb48f';
+                line.style.marginTop = '6px';
+                box.appendChild(line);
+            }
             rows.appendChild(box);
         });
         document.getElementById('remUpdateHint').style.display = api >= 2 ? 'none' : '';
@@ -8399,6 +8442,11 @@
                 : `✓ Aktiv: ${active.map(d => `${d.label.split(' ').slice(1).join(' ')} ${set[d.id].time}`).join(' · ')}`);
         st.style.color = blocked ? '#ffb48f' : (anyOn ? '#3ddc84' : '');
         document.getElementById('remSettingsBtn').style.display = blocked ? '' : 'none';
+        const canTest = typeof window.AndroidApp.sendTestReminder === 'function';
+        document.getElementById('remTestBtn').style.display = canTest ? '' : 'none';
+        let exact = true;
+        try { if (typeof window.AndroidApp.canExactReminders === 'function') exact = !!window.AndroidApp.canExactReminders(); } catch (e) {}
+        document.getElementById('remExactHint').style.display = anyOn && !exact ? '' : 'none';
     }
 
     /* Backup Export & Import */

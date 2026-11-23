@@ -62,6 +62,20 @@ public class ReminderPlanTest {
         pruefe(ReminderPlan.codeFor("evening") == 44 && ReminderPlan.codeFor("weigh") == 41 && ReminderPlan.codeFor("xyz") == 0,
                 "v2: feste Nummern je Erinnerung, unbekannt -> 0");
 
+        // Nachholen verschobener Erinnerungen (Fehler 24.11.: Android verschob bis zu 1 Std.)
+        LocalDateTime t1140 = LocalDateTime.of(2026, 11, 24, 11, 40);
+        pruefe(ReminderPlan.nextTrigger(t1140, 11, 39, false).equals(LocalDateTime.of(2026, 11, 24, 11, 41)),
+                "11:40, Erinnerung 11:39 noch nicht ausgelöst -> in 1 Minute nachholen");
+        pruefe(ReminderPlan.nextTrigger(t1140, 11, 39, true).equals(LocalDateTime.of(2026, 11, 25, 11, 39)),
+                "11:40, heute schon ausgelöst -> morgen 11:39");
+        LocalDateTime t1215 = LocalDateTime.of(2026, 11, 24, 12, 15);
+        pruefe(ReminderPlan.nextTrigger(t1215, 11, 39, false).equals(LocalDateTime.of(2026, 11, 25, 11, 39)),
+                "mehr als 30 Min. vorbei -> nicht mehr nachholen, morgen");
+        pruefe(ReminderPlan.nextTrigger(LocalDateTime.of(2026, 11, 24, 11, 0), 11, 39, true).equals(LocalDateTime.of(2026, 11, 24, 11, 39)),
+                "vor der Uhrzeit -> heute zur Uhrzeit");
+        pruefe("2026-11-24@07:05".equals(ReminderPlan.handledKey("2026-11-24", 7, 5)),
+                "Merk-Wert je Tag und Uhrzeit (neue Uhrzeit am selben Tag -> neuer Versuch)");
+
         System.out.println(fehler == 0 ? "ReminderPlanTest: alles OK" : "ReminderPlanTest: " + fehler + " FEHLER");
         if (fehler > 0) System.exit(1);
     }

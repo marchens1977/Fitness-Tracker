@@ -75,6 +75,48 @@ public class ReminderReceiver extends BroadcastReceiver {
         return (w != null && w.optBoolean("on")) || (t != null && t.optBoolean("on"));
     }
 
+    /**
+     * Wecker stellen: pünktlich („genauer Wecker“, wie ein Kalender), wenn Android es erlaubt –
+     * sonst in einem Zeitfenster von höchstens 10 Minuten.
+     */
+    static void setAlarm(Context context, long at, PendingIntent pi) {
+        AlarmManager am = context.getSystemService(AlarmManager.class);
+        if (am == null) return;
+        if (canExact(context)) {
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+        } else {
+            am.setWindow(AlarmManager.RTC_WAKEUP, at, 10 * 60 * 1000L, pi);
+        }
+    }
+
+    static boolean canExact(Context context) {
+        if (Build.VERSION.SDK_INT < 31) return true;
+        AlarmManager am = context.getSystemService(AlarmManager.class);
+        return am != null && am.canScheduleExactAlarms();
+    }
+
+    private static SharedPreferences prefs(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
+    private static boolean handledToday(Context context, String id, int[] hm) {
+        String key = ReminderPlan.handledKey(LocalDate.now().toString(), hm[0], hm[1]);
+        return key.equals(prefs(context).getString("handled_" + id, ""));
+    }
+
+    private static void markHandled(Context context, String id, int[] hm) {
+        prefs(context).edit().putString("handled_" + id,
+                ReminderPlan.handledKey(LocalDate.now().toString(), hm[0], hm[1])).apply();
+    }
+
+    /** Test-Knopf im Profil: sofort eine Benachrichtigung zeigen. */
+    static boolean sendTest(Context context) {
+        if (!canNotify(context)) return false;
+        notify(context, 49, "✅ Erinnerungen funktionieren",
+                "So sehen deine Erinnerungen aus. Antippen öffnet die App.", "profile");
+        return true;
+    }
+
     private static List<String> strings(JSONArray arr) {
         if (arr == null) return null;
         List<String> out = new ArrayList<>();
@@ -109,9 +151,9 @@ public class ReminderReceiver extends BroadcastReceiver {
                     continue;
                 }
                 int[] hm = ReminderPlan.parseTime(r.optString("time"), 20, 0);
-                LocalDateTime next = ReminderPlan.nextTrigger(LocalDateTime.now(), hm[0], hm[1]);
-                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,
-                        next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), pi);
+                LocalDateTime next = ReminderPlan.nextTrigger(LocalDateTime.now(), hm[0], hm[1],
+                        handledToday(context, id, hm));
+                setAlarm(context, next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), pi);
             }
             for (String id : V2_IDS) {
                 if (!seen.contains(id) && am != null) am.cancel(v2Intent(context, id));
@@ -134,9 +176,7 @@ public class ReminderReceiver extends BroadcastReceiver {
         }
         int[] hm = ReminderPlan.parseTime(o.optString("time"), defH, defM);
         LocalDateTime next = ReminderPlan.nextTrigger(LocalDateTime.now(), hm[0], hm[1]);
-        long at = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-        // Ungefährer Wecker (keine Sonder-Erlaubnis nötig), darf auch im Energiesparmodus laufen
-        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+        setAlarm(context, next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), pi);
     }
 
     @Override
@@ -151,6 +191,9 @@ public class ReminderReceiver extends BroadcastReceiver {
                 for (int i = 0; i < list.length(); i++) {
                     JSONObject r = list.optJSONObject(i);
                     if (r == null || !id.equals(r.optString("id")) || !r.optBoolean("on")) continue;
+                    int[] hm = ReminderPlan.parseTime(r.optString("time"), 20, 0);
+                    if (handledToday(context, id, hm)) continue; // heute schon erledigt (kein doppeltes Erinnern)
+                    markHandled(context, id, hm);
                     List<String> onlyOn = r.isNull("onlyOn") ? null : strings(r.optJSONArray("onlyOn"));
                     boolean fire = ReminderPlan.shouldFire(today, LocalDate.now().getDayOfWeek().getValue(),
                             r.optInt("weekday", 0), onlyOn, strings(r.optJSONArray("skipOn")));
@@ -204,7 +247,7 @@ public class ReminderReceiver extends BroadcastReceiver {
         return nm != null && nm.areNotificationsEnabled();
     }
 
-    private static void notify(Context context, int code, String title, String text, String tab) {
+    static void notify(Context context, int code, String title, String text, String tab) {
         if (!canNotify(context)) return;
         NotificationManager nm = context.getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Erinnerungen", NotificationManager.IMPORTANCE_DEFAULT));

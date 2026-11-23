@@ -162,6 +162,8 @@ function pruefe(ok, was) {
         window.AndroidApp = {
             setReminders: j => { window.__rem.push(JSON.parse(j)); return 'ok'; },
             getNotificationState: () => 'ok', getReminderApi: () => 2,
+            sendTestReminder: () => { window.__tested = (window.__tested || 0) + 1; return 'ok'; },
+            canExactReminders: () => false,
             openNotificationSettings: () => {}, reportSteps: () => {}
         };
     });
@@ -191,6 +193,11 @@ function pruefe(ok, was) {
     const ev = p2.reminders.find(r => r.id === 'evening');
     pruefe(p2.version === 2 && ev.on && ev.time === '21:15' && ev.title.includes('Tageswerte'), 'App bekommt „Tageswerte eintragen“ 21:15');
     pruefe((await app2.locator('#remStatus').innerText()).includes('Tageswerte eintragen 21:15'), 'Status zeigt aktive Erinnerungen');
+    pruefe((await app2.locator('#rem_evening_status').innerText()).startsWith('Heute:'), 'Jede aktive Erinnerung zeigt „Heute: …“');
+    pruefe(await app2.locator('#remTestBtn').isVisible(), 'Knopf „Test-Benachrichtigung senden“ sichtbar');
+    await app2.click('#remTestBtn');
+    pruefe(await app2.evaluate(() => window.__tested) === 1 && (await app2.locator('#toast').innerText()).includes('Test gesendet'), 'Test-Knopf ruft die App, Meldung „Test gesendet“');
+    pruefe(await app2.locator('#remExactHint').isVisible(), 'Ohne pünktliche Wecker: Hinweis „bis zu 10 Minuten später“');
     await app2.evaluate(() => switchTab('nutrition'));
     await app2.fill('#nutKcalInput', '600');
     await app2.click('#tab-nutrition button:has-text("Hinzufügen")');

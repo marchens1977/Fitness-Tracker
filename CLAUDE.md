@@ -138,6 +138,8 @@ Wichtige Details in `index.html`:
     (1.0.13, ohne diese Funktion) bekommen das alte Format (nur Wiegen + Training), die übrigen
     Zeilen sind dort gesperrt mit Update-Hinweis. Abgleich mit der App nach jeder Änderung
     (`scheduleReminderSync`, gebündelt nach 0,5 s). Antippen öffnet die passende Seite.
+    Unter jeder eingeschalteten Erinnerung steht „Heute: kommt um … / heute nicht nötig (Grund) /
+    Uhrzeit vorbei“ (`MotivCalc.reminderTodayStatus`). Knopf „Test-Benachrichtigung senden“.
 - **Backup (Teil 4, seit 23.11.2026):** `BACKUP_SCHEMA` listet alle Speicher; `exportBackup()`
   schreibt jeden davon (Sicherheitsnetz: auch künftig neue Schema-Einträge) plus `backupFormat`
   (`fitness-tracker-backup/3`) und `exportedAt`. **Bewusst nicht im Backup:** `aiApiKeyV2`
@@ -177,8 +179,14 @@ Wichtige Details in `index.html`:
   `renderSteps()`). Aktualisiert sich bei jedem Ablesen (ca. alle 15 Min.).
 - **Erinnerungen** (`ReminderReceiver.java`, Regeln in `ReminderPlan.java` inkl. `shouldFire` und
   festen Nummern 41–46 je Erinnerung, getestet mit `test/ReminderPlanTest.java`; versteht v2-Liste
-  und das alte v1-Format): ungefähre Wecker (`setAndAllowWhileIdle`, keine Sonder-Erlaubnis
-  für exakte Wecker), nach Neustart neu eingeplant (`StepAlarmReceiver`). Erlaubnis
+  und das alte v1-Format): **pünktliche Wecker** (`setExactAndAllowWhileIdle`, Erlaubnis
+  `USE_EXACT_ALARM` – ab Android 13 automatisch; Android 12: `SCHEDULE_EXACT_ALARM`); ohne Erlaubnis
+  Zeitfenster `setWindow` von max. 10 Min. (früher `setAndAllowWhileIdle` – Android 12+ durfte das
+  bis zu 1 Std. verschieben, Fehler vom 24.11.2026). **Nachholen:** War die Uhrzeit vor höchstens
+  30 Min. und die Erinnerung heute noch nicht ausgelöst, kommt sie in 1 Minute (Merk-Wert
+  `handled_<id>` = „Datum@Uhrzeit“, verhindert doppelte Erinnerungen). Test-Knopf
+  `AndroidApp.sendTestReminder()`, `AndroidApp.canExactReminders()`. Nach Neustart neu eingeplant
+  (`StepAlarmReceiver`). Erlaubnis
   `POST_NOTIFICATIONS` wird ab Android 13 beim Einschalten erfragt; ist sie aus, zeigt die Webseite
   einen Knopf zu den Android-Einstellungen (`AndroidApp.openNotificationSettings()`).
   Benachrichtigungs-Symbol `res/drawable/ic_notification.xml`.
@@ -358,7 +366,15 @@ Wichtige Details in `index.html`:
   Schrittziel. Neu: Erinnerungen „Serie retten“, „Abends Tageswerte eintragen“, „Check-in fällig“,
   „Backup (sonntags)“ – alle einzeln an/aus mit Uhrzeit (neue App-Version nötig).
 
+- 24.11.2026 – Nutzer: Wiege-Erinnerung um 11:39 kam nicht. Grund 1 (gewollt): schon gewogen.
+  Grund 2 (Fehler): ungefähre Wecker durften bis zu 1 Std. später kommen und wurden beim Öffnen
+  der App auf morgen verschoben. Behoben: pünktliche Wecker, Nachholen, Test-Knopf, Anzeige
+  „Heute: …“ je Erinnerung (neue App-Version nötig).
+
 ### Test-Liste Erinnerungen v2 + Serie (zum Abhaken am Handy)
+- [ ] Nach dem Update: Profil → Erinnerungen → „Test-Benachrichtigung senden“ → Benachrichtigung kommt sofort.
+- [ ] Unter jeder eingeschalteten Erinnerung steht „Heute: …“ (z. B. „heute nicht nötig (heute schon gewogen)“).
+- [ ] „Abends Tageswerte“ auf eine Uhrzeit in 3–5 Minuten stellen, speichern, App schließen → kommt pünktlich.
 - [ ] Serie/Wochenansicht zeigt nur Tage mit echtem Training (nicht mehr „7 von 7“).
 - [ ] App aktualisieren (Profil → „Nach Updates suchen“).
 - [ ] Profil → Erinnerungen: 6 Zeilen, alle einstellbar (kein Update-Hinweis mehr).

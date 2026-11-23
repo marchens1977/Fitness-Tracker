@@ -90,6 +90,14 @@ pruefe(M.buildReminders({ today: '2026-11-23', plan: { endDate: '2026-11-20', ch
 pruefe(R('backup').weekday === 7 && R('backup').skipOn.includes('2026-11-26') && !R('backup').skipOn.includes('2026-11-29'), 'Backup: sonntags, nur wenn letztes Backup ≥ 7 Tage alt');
 pruefe(rem.reminders.every(r => !r.on || /^\d{2}:\d{2}$/.test(r.time)), 'Alle Uhrzeiten gültig');
 
+console.log('Erinnerungen: Anzeige „Heute: …“:');
+const st = (id, now) => M.reminderTodayStatus(R(id), '2026-11-23', now);
+pruefe(st('weigh', '06:00').text.includes('schon gewogen') && !st('weigh', '06:00').due, 'Wiegen: „heute nicht nötig (heute schon gewogen)“ (Fall vom 24.11.)');
+pruefe(st('streak', '18:00').due && st('streak', '18:00').text === 'kommt heute um 19:00', 'Serie: „kommt heute um 19:00“');
+pruefe(st('streak', '19:30').text.includes('Uhrzeit vorbei'), 'Nach der Uhrzeit: „vorbei · nächste: morgen“');
+pruefe(M.reminderTodayStatus(R('training'), '2026-11-23', '10:00').text === 'aus', 'Ausgeschaltet: „aus“');
+pruefe(M.reminderTodayStatus(Object.assign({}, R('backup'), { on: true }), '2026-11-23', '10:00').text.includes('sonntags'), 'Backup an einem Montag: „nächste: sonntags“');
+
 console.log('Ohne Süßes:');
 const sw = M.simpleStreak(['2026-11-20', '2026-11-21', '2026-11-22'], '2026-11-23');
 pruefe(sw.current === 3 && !sw.today, 'Gestern zählt noch (heute abends abhaken)');

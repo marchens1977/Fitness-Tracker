@@ -70,8 +70,13 @@ print("Erinnerungen (Android):")
 reminder = (PKG / "ReminderReceiver.java").read_text(encoding="utf-8")
 pruefe("android.permission.POST_NOTIFICATIONS" in manifest, "Erlaubnis für Benachrichtigungen im Manifest")
 pruefe('android:name=".ReminderReceiver"' in manifest, "Erinnerungs-Empfänger angemeldet")
-pruefe("SCHEDULE_EXACT_ALARM" not in manifest and "USE_EXACT_ALARM" not in manifest and "setExact" not in reminder,
-       "Keine Sonder-Erlaubnis für exakte Wecker (ungefähre Uhrzeit reicht)")
+pruefe("android.permission.USE_EXACT_ALARM" in manifest and 'SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32"' in manifest,
+       "Pünktliche Erinnerungen: genaue Wecker erlaubt (Android 13+ automatisch, Android 12 über SCHEDULE_EXACT_ALARM)")
+pruefe("setExactAndAllowWhileIdle" in reminder and "setWindow" in reminder and "canScheduleExactAlarms" in reminder,
+       "Genauer Wecker, ohne Erlaubnis Zeitfenster (max. 10 Min.) statt bis zu 1 Std. Verspätung")
+pruefe("setAndAllowWhileIdle" not in reminder, "Kein ungefährer Wecker mehr für Erinnerungen (konnte bis zu 1 Std. später kommen)")
+pruefe("handledToday" in reminder and "markHandled" in reminder, "Verschobene Erinnerung wird nachgeholt, aber nie doppelt gezeigt")
+pruefe("public String sendTestReminder()" in main and "sendTestReminder" in html, "Test-Knopf: App zeigt sofort eine Benachrichtigung")
 pruefe("ReminderReceiver.scheduleAll" in (PKG / "StepAlarmReceiver.java").read_text(encoding="utf-8"),
        "Nach Handy-Neustart werden Erinnerungen neu eingeplant")
 pruefe("public String setReminders(String json)" in main and "openNotificationSettings" in main,

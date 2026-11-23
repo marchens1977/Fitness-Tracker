@@ -9,6 +9,10 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Erinnerungen (Wiegen, Training) als Benachrichtigung anzeigen (ab Android 13 nachfragen) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Pünktliche Erinnerungen („genauer Wecker“ wie bei Kalender-Apps). Ab Android 13 automatisch
+         erlaubt; Android 12 nutzt SCHEDULE_EXACT_ALARM. Ohne Erlaubnis: Zeitfenster von max. 10 Min. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
 
     <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false" />
 

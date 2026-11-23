@@ -386,6 +386,20 @@ public class MainActivity extends Activity implements SensorEventListener {
             return 2;
         }
 
+        /** Test-Knopf: sofort eine Benachrichtigung. "ok" = gezeigt, "off" = Benachrichtigungen aus. */
+        @JavascriptInterface
+        public String sendTestReminder() {
+            if (ReminderReceiver.sendTest(MainActivity.this)) return "ok";
+            handler.post(MainActivity.this::requestNotifyPermission);
+            return "off";
+        }
+
+        /** true = Erinnerungen kommen pünktlich (genaue Wecker erlaubt). */
+        @JavascriptInterface
+        public boolean canExactReminders() {
+            return ReminderReceiver.canExact(MainActivity.this);
+        }
+
         /** "ok" = Benachrichtigungen erlaubt, "off" = aus. */
         @JavascriptInterface
         public String getNotificationState() {

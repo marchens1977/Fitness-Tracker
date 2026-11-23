@@ -32,6 +32,26 @@ final class ReminderPlan {
         return target;
     }
 
+    /** Wie lange nach der eingestellten Uhrzeit eine verpasste Erinnerung noch nachgeholt wird. */
+    static final int CATCH_UP_MINUTES = 30;
+
+    /**
+     * Nächster Termin mit Nachholen: Ist die Uhrzeit heute erst vor kurzem (bis 30 Min.) vorbei und
+     * wurde die Erinnerung heute für diese Uhrzeit noch nicht ausgelöst (z. B. weil Android den Wecker
+     * verschoben hat), kommt sie in einer Minute – statt erst morgen.
+     */
+    static LocalDateTime nextTrigger(LocalDateTime now, int hour, int minute, boolean handledToday) {
+        LocalDateTime today = now.toLocalDate().atTime(LocalTime.of(hour, minute));
+        if (now.isBefore(today)) return today;
+        if (!handledToday && now.isBefore(today.plusMinutes(CATCH_UP_MINUTES))) return now.plusMinutes(1);
+        return today.plusDays(1);
+    }
+
+    /** Merk-Wert „heute für diese Uhrzeit erledigt“, z. B. "2026-11-24@11:39". */
+    static String handledKey(String todayIso, int hour, int minute) {
+        return todayIso + "@" + String.format("%02d:%02d", hour, minute);
+    }
+
     /** Wiege-Erinnerung nur, wenn heute noch kein Gewicht eingetragen wurde. */
     static boolean shouldRemindWeigh(String todayIso, String weighedOnIso) {
         return weighedOnIso == null || !weighedOnIso.equals(todayIso);
