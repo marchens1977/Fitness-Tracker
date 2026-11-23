@@ -107,8 +107,13 @@ Wichtige Details in `index.html`:
   - Startseite: Karte „Heute laut Plan“.
 - **Motivation (Teil 3, seit 23.11.2026):** Rechenteil im Block `MOTIV-CALC-START … MOTIV-CALC-END`
   (`MotivCalc`).
-  - Serie „X Tage am Stück aktiv“ (`calculateStreaks`): gezählt werden aktive Tage (`activeDatesV2`:
-    Training, Lauf, Schritte, Ernährung, Gewicht, erledigte Plan-Einheit, Mini-Einheit).
+  - Serie „X Tage am Stück aktiv“ (`calculateStreaks`): aktive Tage werden **frisch aus den Daten
+    berechnet** (`getActivityDaySet` / `MotivCalc.activeDays`) – nur **echte Bewegung**: Training
+    (Kraft, Cardio, Bodyweight, Dehnen), Lauf, erledigte Plan-Einheit, Mini-Einheit oder
+    **erreichtes Schrittziel**. Nicht: ein paar Schritte, Gewicht oder Ernährung eintragen
+    (Entscheidung des Nutzers 24.11.2026, nach dem Fehler „7 von 7“: die Android-App liefert täglich
+    Schritte, dadurch war jeder Tag „aktiv“). `activeDatesV2` wird weiter gefüllt (Archiv), aber
+    nicht mehr für Serie, Wochenansicht und Abzeichen benutzt.
     **Ruhetage unterbrechen nicht** (zählen aber nicht mit): Ruhetage aus dem Plan (neuester Plan
     gewinnt) und – für Tage ohne Plan – feste Wochentage (`restWeekdaysV2`, 0 = Mo, höchstens 3,
     einstellbar unter Motivation). Heute darf noch offen sein.
@@ -122,11 +127,17 @@ Wichtige Details in `index.html`:
     Schritte (nur abgeschlossene Tage). Verlauf = jede Verbesserung (mehrere am selben Tag = ein
     Eintrag). „Neuer Rekord!“-Fenster nur bei echter Verbesserung gegenüber `recordsSeenV2`;
     erster Wert und Backup laden werden still übernommen.
-  - Erinnerungen (Android-App, ab der App-Version nach dem 23.11.2026): Karte im Profil (nur in der
-    App sichtbar). Webseite schickt per `AndroidApp.setReminders(json)` Einstellungen
-    (`remindersV2`: Wiegen an/aus + Uhrzeit, Training an/aus + Uhrzeit), offene Trainingstage aus
-    dem Plan (mit Titel) und den letzten Wiege-Tag. Wiege-Erinnerung entfällt, wenn heute schon
-    gewogen; Trainings-Erinnerung nur an offenen Trainingstagen. Antippen öffnet Übersicht bzw. Plan.
+  - Erinnerungen (Android-App): Karte im Profil (nur in der App sichtbar), je Erinnerung An/Aus +
+    Uhrzeit (`remindersV2`, neue sind anfangs aus). `MotivCalc.REMINDER_DEFS` / `buildReminders`:
+    ⚖️ Wiegen 7:00 (nicht, wenn heute gewogen) · 🏋️ Training 17:00 (nur offene Plan-Tage, mit
+    Titel) · 🔥 Serie retten 19:00 (nicht, wenn heute aktiv oder Ruhetag; Text mit Serienlänge) ·
+    📝 Abends Tageswerte 20:30 (nicht, wenn heute Ernährung eingetragen) · ✅ Check-in 9:00 (nur
+    nach Planende ohne Check-in) · 💾 Backup sonntags 19:00 (nur, wenn letztes Backup ≥ 7 Tage).
+    Format v2 an die App: Liste mit `onlyOn`/`skipOn`/`weekday`/`textOn` je Erinnerung (Webseite
+    rechnet ca. 3 Wochen voraus). Die App meldet `AndroidApp.getReminderApi()` = 2; ältere Apps
+    (1.0.13, ohne diese Funktion) bekommen das alte Format (nur Wiegen + Training), die übrigen
+    Zeilen sind dort gesperrt mit Update-Hinweis. Abgleich mit der App nach jeder Änderung
+    (`scheduleReminderSync`, gebündelt nach 0,5 s). Antippen öffnet die passende Seite.
 - **Backup (Teil 4, seit 23.11.2026):** `BACKUP_SCHEMA` listet alle Speicher; `exportBackup()`
   schreibt jeden davon (Sicherheitsnetz: auch künftig neue Schema-Einträge) plus `backupFormat`
   (`fitness-tracker-backup/3`) und `exportedAt`. **Bewusst nicht im Backup:** `aiApiKeyV2`
@@ -164,8 +175,9 @@ Wichtige Details in `index.html`:
   zeigt Schritte heute + Ziel + Balken. Wert = größerer aus Chip und Webseite
   (Webseite meldet per `AndroidApp.reportSteps(datum, schritte, ziel)` aus
   `renderSteps()`). Aktualisiert sich bei jedem Ablesen (ca. alle 15 Min.).
-- **Erinnerungen** (`ReminderReceiver.java`, Regeln in `ReminderPlan.java`, getestet mit
-  `test/ReminderPlanTest.java`): ungefähre Wecker (`setAndAllowWhileIdle`, keine Sonder-Erlaubnis
+- **Erinnerungen** (`ReminderReceiver.java`, Regeln in `ReminderPlan.java` inkl. `shouldFire` und
+  festen Nummern 41–46 je Erinnerung, getestet mit `test/ReminderPlanTest.java`; versteht v2-Liste
+  und das alte v1-Format): ungefähre Wecker (`setAndAllowWhileIdle`, keine Sonder-Erlaubnis
   für exakte Wecker), nach Neustart neu eingeplant (`StepAlarmReceiver`). Erlaubnis
   `POST_NOTIFICATIONS` wird ab Android 13 beim Einschalten erfragt; ist sie aus, zeigt die Webseite
   einen Knopf zu den Android-Einstellungen (`AndroidApp.openNotificationSettings()`).
@@ -340,6 +352,19 @@ Wichtige Details in `index.html`:
 - 23.11.2026 – Teil 4 „Export/Import“: Backup enthält nachweislich alle Daten (außer KI-Schlüssel),
   Rückfrage mit Überblick vor dem Laden, „Rückgängig“, Anzeige „Letztes Backup“. Nur Webseite,
   keine neue App-Version nötig. Neuer Test `test/backup_test.js`. Damit sind Teil 1–4 fertig.
+
+- 24.11.2026 – Fehler behoben: Serie zeigte „7 von 7“, obwohl der Nutzer noch nicht gestartet war
+  (jeder Tag mit Schritten zählte als aktiv). Jetzt zählt nur echte Bewegung oder erreichtes
+  Schrittziel. Neu: Erinnerungen „Serie retten“, „Abends Tageswerte eintragen“, „Check-in fällig“,
+  „Backup (sonntags)“ – alle einzeln an/aus mit Uhrzeit (neue App-Version nötig).
+
+### Test-Liste Erinnerungen v2 + Serie (zum Abhaken am Handy)
+- [ ] Serie/Wochenansicht zeigt nur Tage mit echtem Training (nicht mehr „7 von 7“).
+- [ ] App aktualisieren (Profil → „Nach Updates suchen“).
+- [ ] Profil → Erinnerungen: 6 Zeilen, alle einstellbar (kein Update-Hinweis mehr).
+- [ ] „Abends Tageswerte eintragen“ an (z. B. 20:30) → kommt abends, aber nicht, wenn Ernährung schon eingetragen.
+- [ ] „Serie retten“ an → kommt nur an Tagen ohne Bewegung (nicht an Ruhetagen).
+- [ ] Antippen einer Erinnerung öffnet die passende Seite (z. B. Ernährung).
 
 ### Test-Liste Teil 4 „Backup“ (zum Abhaken am Handy)
 - [ ] Profil → „Backup speichern“ → Speicherort wählen → „Letztes Backup: (heute) ✓“.

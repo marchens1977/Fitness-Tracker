@@ -79,6 +79,10 @@ pruefe("public String setReminders(String json)" in main and "openNotificationSe
 pruefe("window.AndroidApp.setReminders(" in html and 'id="reminderCard"' in html,
        "Webseite: Karte „Erinnerungen“ im Profil ruft die App")
 pruefe((ROOT / "android/app/src/main/res/drawable/ic_notification.xml").exists(), "Symbol für Benachrichtigungen vorhanden")
+pruefe("public int getReminderApi()" in main and "getReminderApi" in html,
+       "Erinnerungen v2: App meldet ihre Version, Webseite fragt sie ab (ältere Apps bekommen das alte Format)")
+pruefe(all(f'"{i}"' in reminder for i in ["weigh", "training", "streak", "evening", "checkin", "backup"]),
+       "App kennt alle 6 Erinnerungen")
 
 print("Java-Test der Versions-Regeln:")
 if shutil.which("javac") and shutil.which("java"):

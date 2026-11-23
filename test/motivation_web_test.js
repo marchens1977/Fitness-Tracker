@@ -30,7 +30,10 @@ function pruefe(ok, was) {
 
     console.log('Serie mit festen Ruhetagen:');
     // aktiv vorgestern und vor 3 Tagen, gestern nicht → ohne Ruhetag ist die Serie 0
-    await page.evaluate(([a, b]) => { localStorage.setItem('activeDatesV2', JSON.stringify([a, b])); initApp(); }, [await shift(-3), await shift(-2)]);
+    await page.evaluate(([a, b]) => {
+        localStorage.setItem('runningLogsV2', JSON.stringify([{ id: 'a', date: a, distanceKm: 3, durationMin: 20 }, { id: 'b', date: b, distanceKm: 3, durationMin: 20 }]));
+        initApp();
+    }, [await shift(-3), await shift(-2)]);
     pruefe(await page.evaluate(() => calculateStreaks().current) === 0, 'Ohne Ruhetag: gestern nichts → Serie 0');
     await page.evaluate(() => switchTab('motivation'));
     const yWd = await page.evaluate(() => MotivCalc.weekdayIndex(shiftDateKey(getLocalDateKey(), -1)));
@@ -81,7 +84,8 @@ function pruefe(ok, was) {
     pruefe(await page.locator('#recordsList .record-card').count() === 5, 'Bestwerte-Seite mit 5 Werten');
     const pull = await page.locator('#recordsList [data-record="pullups"]').innerText();
     pruefe(pull.includes('7 Wdh.') && !pull.includes('Verlauf'), 'Klimmzüge: 7 (mehrere Verbesserungen am selben Tag = ein Eintrag)');
-    pruefe((await page.locator('#recordsList [data-record="runKm"]').innerText()).includes('noch kein Wert'), 'Ohne Lauf: „noch kein Wert“');
+    pruefe((await page.locator('#recordsList [data-record="pushups"]').innerText()).includes('noch kein Wert'), 'Ohne Liegestütze: „noch kein Wert“');
+    pruefe((await page.locator('#recordsList [data-record="runKm"]').innerText()).includes('3 km'), 'Längster Lauf aus den Test-Läufen: 3 km');
 
     console.log('Backup laden feiert nicht:');
     await page.evaluate(() => { window.__saved = null; window.AndroidApp = { saveFile: (n, t) => { window.__saved = t; } }; exportBackup(); delete window.AndroidApp; });
@@ -130,9 +134,9 @@ function pruefe(ok, was) {
         switchTab('profile');
     });
     pruefe(await app.locator('#reminderCard').isVisible(), 'Erinnerungs-Karte sichtbar');
-    await app.selectOption('#remWeighOn', '1');
-    await app.fill('#remWeighTime', '06:45');
-    await app.selectOption('#remTrainOn', '1');
+    await app.selectOption('#rem_weigh_on', '1');
+    await app.fill('#rem_weigh_time', '06:45');
+    await app.selectOption('#rem_training_on', '1');
     await app.click('#reminderCard button:has-text("Erinnerungen speichern")');
     const last = await app.evaluate(() => window.__rem[window.__rem.length - 1]);
     pruefe(last.weigh.on && last.weigh.time === '06:45' && last.training.on && last.training.time === '17:00', 'Einstellungen an die App (Wiegen 06:45, Training 17:00)');
@@ -149,6 +153,55 @@ function pruefe(ok, was) {
     await app.click('#tab-weight button:has-text("Speichern") >> nth=0');
     await app.click('#appModalYes');
     pruefe(await app.evaluate(() => window.__rem[window.__rem.length - 1].weighedOn) === today, 'Nach dem Wiegen wird die App informiert');
+
+    // ---------- Neue App-Version (Erinnerungen v2) ----------
+    const app2 = await browser.newPage({ viewport: { width: 412, height: 860 } });
+    app2.on('pageerror', e => errors.push(e.message));
+    await app2.addInitScript(() => {
+        window.__rem = [];
+        window.AndroidApp = {
+            setReminders: j => { window.__rem.push(JSON.parse(j)); return 'ok'; },
+            getNotificationState: () => 'ok', getReminderApi: () => 2,
+            openNotificationSettings: () => {}, reportSteps: () => {}
+        };
+    });
+    await app2.goto(url);
+    await app2.waitForTimeout(300);
+    console.log('Erinnerungen in der neuen App (alle 6):');
+    // Nur Schritte (unter dem Ziel) → kein aktiver Tag, Serie 0 (Fehler „7 von 7“)
+    await app2.evaluate(() => {
+        const t = getLocalDateKey();
+        const h = {};
+        for (let i = 0; i < 7; i++) h[shiftDateKey(t, -i)] = 3000 + i;
+        localStorage.setItem('stepsHistoryV2', JSON.stringify(h));
+        localStorage.setItem('activeDatesV2', JSON.stringify(Object.keys(h)));
+        initApp();
+    });
+    pruefe(await app2.evaluate(() => calculateStreaks().current) === 0, 'Nur Schritte unter dem Ziel → Serie 0 (nicht 7)');
+    await app2.evaluate(() => switchTab('motivation'));
+    pruefe(await app2.locator('#weekMatrix .day-pill.done').count() === 0, 'Wochenansicht: keine Tage als aktiv markiert');
+    await app2.evaluate(() => switchTab('profile'));
+    pruefe(await app2.locator('#reminderRows [data-reminder]').count() === 6, '6 Erinnerungen mit Schalter und Uhrzeit');
+    pruefe(await app2.locator('#remUpdateHint').isHidden() && await app2.locator('#rem_evening_on').isEnabled(), 'Neue App: alle einstellbar, kein Update-Hinweis');
+    await app2.selectOption('#rem_evening_on', '1');
+    await app2.fill('#rem_evening_time', '21:15');
+    await app2.selectOption('#rem_streak_on', '1');
+    await app2.click('#reminderCard button:has-text("Erinnerungen speichern")');
+    const p2 = await app2.evaluate(() => window.__rem[window.__rem.length - 1]);
+    const ev = p2.reminders.find(r => r.id === 'evening');
+    pruefe(p2.version === 2 && ev.on && ev.time === '21:15' && ev.title.includes('Tageswerte'), 'App bekommt „Tageswerte eintragen“ 21:15');
+    pruefe((await app2.locator('#remStatus').innerText()).includes('Tageswerte eintragen 21:15'), 'Status zeigt aktive Erinnerungen');
+    await app2.evaluate(() => switchTab('nutrition'));
+    await app2.fill('#nutKcalInput', '600');
+    await app2.click('#tab-nutrition button:has-text("Hinzufügen")');
+    await app2.waitForTimeout(700);
+    const p3 = await app2.evaluate(() => window.__rem[window.__rem.length - 1]);
+    pruefe(p3.reminders.find(r => r.id === 'evening').skipOn.includes(today), 'Nach dem Eintragen: heute keine Abend-Erinnerung mehr');
+    await app2.evaluate(() => { const t = getLocalDateKey(); localStorage.setItem('runningLogsV2', JSON.stringify([{ id: 'x', date: t, distanceKm: 4, durationMin: 25 }])); markDateActive(t); });
+    await app2.waitForTimeout(700);
+    const p4 = await app2.evaluate(() => window.__rem[window.__rem.length - 1]);
+    pruefe(p4.reminders.find(r => r.id === 'streak').skipOn.includes(today), 'Nach einem Lauf: heute keine „Serie retten“-Erinnerung');
+    await app2.close();
 
     await browser.close();
     if (errors.length) {

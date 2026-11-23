@@ -380,6 +380,12 @@ public class MainActivity extends Activity implements SensorEventListener {
             return ReminderReceiver.canNotify(MainActivity.this) ? "ok" : "off";
         }
 
+        /** Welche Erinnerungs-Version die App versteht (2 = alle Erinnerungen, Liste mit Regeln). */
+        @JavascriptInterface
+        public int getReminderApi() {
+            return 2;
+        }
+
         /** "ok" = Benachrichtigungen erlaubt, "off" = aus. */
         @JavascriptInterface
         public String getNotificationState() {

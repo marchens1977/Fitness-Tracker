@@ -48,6 +48,20 @@ public class ReminderPlanTest {
         pruefe("Training".equals(ReminderPlan.trainingTitleFor("2026-11-24",
                 Arrays.asList("2026-11-24"), Arrays.asList(""))), "ohne Titel -> „Training“");
 
+        // Erinnerungen v2
+        pruefe(ReminderPlan.shouldFire("2026-11-23", 1, 0, null, Arrays.asList("2026-11-22")),
+                "v2: jeden Tag, heute nicht ausgenommen -> erinnern");
+        pruefe(!ReminderPlan.shouldFire("2026-11-23", 1, 0, null, Arrays.asList("2026-11-23")),
+                "v2: heute ausgenommen (z. B. schon eingetragen) -> nicht");
+        pruefe(!ReminderPlan.shouldFire("2026-11-23", 1, 0, Arrays.asList(), null),
+                "v2: leere Nur-an-Liste (z. B. Check-in erledigt) -> nie");
+        pruefe(ReminderPlan.shouldFire("2026-11-30", 1, 0, Arrays.asList("2026-11-30"), null),
+                "v2: heute in der Nur-an-Liste -> erinnern");
+        pruefe(ReminderPlan.shouldFire("2026-11-29", 7, 7, null, null) && !ReminderPlan.shouldFire("2026-11-28", 6, 7, null, null),
+                "v2: Backup nur sonntags");
+        pruefe(ReminderPlan.codeFor("evening") == 44 && ReminderPlan.codeFor("weigh") == 41 && ReminderPlan.codeFor("xyz") == 0,
+                "v2: feste Nummern je Erinnerung, unbekannt -> 0");
+
         System.out.println(fehler == 0 ? "ReminderPlanTest: alles OK" : "ReminderPlanTest: " + fehler + " FEHLER");
         if (fehler > 0) System.exit(1);
     }

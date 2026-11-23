@@ -52,6 +52,44 @@ pruefe(M.activityStreak([], rest, '2026-11-23').current === 0, 'Keine Aktivität
 const restRest = M.activityStreak(['2026-11-21'], new Set(['2026-11-22', '2026-11-23']), '2026-11-23');
 pruefe(restRest.current === 1 && restRest.todayIsRest, 'Ruhetag heute: Serie bleibt, wird erkannt');
 
+console.log('Aktive Tage (Fehler „7 von 7“ vom 23.11.):');
+const act = M.activeDays({
+    steps: { '2026-11-17': 300, '2026-11-18': 4200, '2026-11-19': 10500, '2026-11-20': 800 }, stepGoal: 10000,
+    bw: { '2026-11-21': { date: '2026-11-21', exercises: [{ sets: [{ reps: 5 }] }] }, '2026-11-22': { date: '2026-11-22', exercises: [] } },
+    cardio: { '2026-11-16': { entries: [{ duration: 20 }] } },
+    runs: [{ date: '2026-11-15', distanceKm: 3 }],
+    mini: ['2026-11-14'],
+    plans: [{ progress: { '2026-11-13': { done: true, doneOn: '2026-11-13' }, '2026-11-12': { done: false } } }]
+});
+pruefe(!act.has('2026-11-17') && !act.has('2026-11-18') && !act.has('2026-11-20'), 'Nur ein paar Schritte → KEIN aktiver Tag');
+pruefe(act.has('2026-11-19'), 'Schrittziel erreicht → aktiver Tag');
+pruefe(act.has('2026-11-21') && !act.has('2026-11-22'), 'Bodyweight mit Satz zählt, leerer Tag nicht');
+pruefe(act.has('2026-11-16') && act.has('2026-11-15') && act.has('2026-11-14') && act.has('2026-11-13'), 'Cardio, Lauf, Mini-Einheit, erledigte Plan-Einheit zählen');
+pruefe(!act.has('2026-11-12'), 'Nicht erledigte Plan-Einheit zählt nicht');
+pruefe(M.activeDays({ steps: { '2026-11-19': 15000 }, stepGoal: 0 }).size === 0, 'Ohne Schrittziel zählen Schritte nicht');
+
+console.log('Erinnerungen (Regeln):');
+const rem = M.buildReminders({
+    today: '2026-11-23',
+    settings: { weigh: { on: true, time: '06:30' }, evening: { on: true, time: 'Quatsch' }, streak: { on: true } },
+    lastWeighDate: '2026-11-23',
+    openTrainingDays: [{ date: '2026-11-24', title: 'Ganzkörper' }],
+    nutritionDates: ['2026-11-22', '2026-11-23'],
+    activeDates: ['2026-11-22'], restDates: ['2026-11-25'], streak: 4,
+    plan: { endDate: '2026-11-29', checkinDone: false },
+    lastBackup: '2026-11-20'
+});
+const R = id => rem.reminders.find(r => r.id === id);
+pruefe(rem.version === 2 && rem.reminders.length === 6, '6 Erinnerungen im neuen Format');
+pruefe(R('weigh').on && R('weigh').time === '06:30' && R('weigh').skipOn.includes('2026-11-23'), 'Wiegen: heute schon gewogen → heute nicht');
+pruefe(R('evening').time === '20:30' && R('evening').skipOn.includes('2026-11-23'), 'Abends: ungültige Uhrzeit → 20:30; heute schon Ernährung → nicht');
+pruefe(!R('training').on && R('training').onlyOn.join() === '2026-11-24' && R('training').textOn['2026-11-24'].startsWith('Ganzkörper'), 'Training: nur offene Plan-Tage, mit Titel');
+pruefe(!R('streak').skipOn.includes('2026-11-23') && R('streak').skipOn.includes('2026-11-25') && R('streak').textOn['2026-11-23'].includes('4 Tage'), 'Serie: heute noch nicht aktiv → ja (mit „4 Tage“), Ruhetag → nein');
+pruefe(R('checkin').onlyOn[0] === '2026-11-30' && !R('checkin').onlyOn.includes('2026-11-29'), 'Check-in: erst nach Planende');
+pruefe(M.buildReminders({ today: '2026-11-23', plan: { endDate: '2026-11-20', checkinDone: true } }).reminders.find(r => r.id === 'checkin').onlyOn.length === 0, 'Check-in erledigt → keine Erinnerung');
+pruefe(R('backup').weekday === 7 && R('backup').skipOn.includes('2026-11-26') && !R('backup').skipOn.includes('2026-11-29'), 'Backup: sonntags, nur wenn letztes Backup ≥ 7 Tage alt');
+pruefe(rem.reminders.every(r => !r.on || /^\d{2}:\d{2}$/.test(r.time)), 'Alle Uhrzeiten gültig');
+
 console.log('Ohne Süßes:');
 const sw = M.simpleStreak(['2026-11-20', '2026-11-21', '2026-11-22'], '2026-11-23');
 pruefe(sw.current === 3 && !sw.today, 'Gestern zählt noch (heute abends abhaken)');

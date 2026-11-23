@@ -37,6 +37,30 @@ final class ReminderPlan {
         return weighedOnIso == null || !weighedOnIso.equals(todayIso);
     }
 
+    /**
+     * Erinnerungen v2: Soll heute erinnert werden?
+     * onlyOn = null: jeden Tag erlaubt; leere Liste: nie. skipOn: an diesen Tagen nicht.
+     * weekday 1–7 (1 = Montag): nur an diesem Wochentag; 0 = jeden Tag.
+     */
+    static boolean shouldFire(String todayIso, int todayWeekday, int weekday, List<String> onlyOn, List<String> skipOn) {
+        if (weekday >= 1 && weekday <= 7 && weekday != todayWeekday) return false;
+        if (onlyOn != null && !onlyOn.contains(todayIso)) return false;
+        return skipOn == null || !skipOn.contains(todayIso);
+    }
+
+    /** Feste Nummer je Erinnerung (für Wecker und Benachrichtigung). */
+    static int codeFor(String id) {
+        switch (id == null ? "" : id) {
+            case "weigh": return 41;
+            case "training": return 42;
+            case "streak": return 43;
+            case "evening": return 44;
+            case "checkin": return 45;
+            case "backup": return 46;
+            default: return 0; // unbekannt: nicht einplanen
+        }
+    }
+
     /** Trainings-Erinnerung nur an offenen Trainingstagen aus dem Plan. dates/titles gleich lang. */
     static String trainingTitleFor(String todayIso, List<String> dates, List<String> titles) {
         if (dates == null) return null;

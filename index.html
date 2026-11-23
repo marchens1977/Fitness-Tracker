@@ -1879,28 +1879,8 @@
         <div class="card" id="reminderCard" style="display: none;">
             <h2>Erinnerungen</h2>
             <p class="muted" style="font-size: 0.85rem; margin-top: 0;">Die App erinnert dich per Benachrichtigung. Die Uhrzeit ist ungefähr (Android verschiebt sie manchmal um ein paar Minuten).</p>
-            <div class="input-split">
-                <div>
-                    <label class="field-label" for="remWeighOn">Morgens ans Wiegen</label>
-                    <select id="remWeighOn"><option value="1">An</option><option value="0">Aus</option></select>
-                </div>
-                <div>
-                    <label class="field-label" for="remWeighTime">Uhrzeit</label>
-                    <input type="time" id="remWeighTime" value="07:00">
-                </div>
-            </div>
-            <p class="muted" style="font-size: 0.78rem; margin: 0 0 8px 0;">Kommt nicht, wenn du heute schon gewogen hast.</p>
-            <div class="input-split">
-                <div>
-                    <label class="field-label" for="remTrainOn">An Trainingstagen (Plan)</label>
-                    <select id="remTrainOn"><option value="1">An</option><option value="0">Aus</option></select>
-                </div>
-                <div>
-                    <label class="field-label" for="remTrainTime">Uhrzeit</label>
-                    <input type="time" id="remTrainTime" value="17:00">
-                </div>
-            </div>
-            <p class="muted" style="font-size: 0.78rem; margin: 0 0 8px 0;">Nur an Tagen mit offener Einheit aus deinem Trainingsplan.</p>
+            <div id="reminderRows"></div>
+            <p class="muted" id="remUpdateHint" style="font-size: 0.8rem; display: none;">Für „Serie retten“, „Tageswerte“, „Check-in“ und „Backup“ bitte die App aktualisieren (Profil → „Nach Updates suchen“).</p>
             <button type="button" onclick="saveReminders()">Erinnerungen speichern</button>
             <p id="remStatus" style="font-size: 0.85rem; margin-bottom: 0;"></p>
             <button type="button" class="btn-secondary" id="remSettingsBtn" style="display: none;" onclick="window.AndroidApp.openNotificationSettings()">Benachrichtigungen in Android erlauben</button>
@@ -4292,6 +4272,7 @@
         renderMini();
         renderOverviewWeight();
         renderOverviewPlan();
+        scheduleReminderSync(); // Erinnerungen wissen so, was heute schon erledigt ist
 
         renderNutritionGoalRows(document.getElementById('ovNutritionGoals'), getNutritionTotals(today), true);
     }
@@ -6578,6 +6559,7 @@
         const set = getActiveDatesSet();
         set.add(dateKey);
         localStorage.setItem('activeDatesV2', JSON.stringify(Array.from(set)));
+        scheduleReminderSync();
     }
 
     function dateHasAnyData(dateKey) {
@@ -6609,7 +6591,7 @@
 
     // Serie: aktive Tage am Stück; geplante Ruhetage (Plan oder feste Wochentage) unterbrechen nicht
     function calculateStreaks() {
-        return MotivCalc.activityStreak(Array.from(getActiveDatesSet()), getRestDaySetUntilToday(), getLocalDateKey());
+        return MotivCalc.activityStreak(Array.from(getActivityDaySet()), getRestDaySetUntilToday(), getLocalDateKey());
     }
 
     function savePersonalWhy() {
@@ -6637,7 +6619,7 @@
         document.getElementById('motCurrentStreak').textContent = streaks.current === 1 ? '1 Tag' : `${streaks.current} Tage`;
         document.getElementById('motBestStreak').textContent = streaks.best === 1 ? '1 Tag' : `${streaks.best} Tage`;
 
-        const activeSet = getActiveDatesSet();
+        const activeSet = getActivityDaySet();
         const weekDates = getCurrentWeekDates();
         const dayNames = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
         const matrix = document.getElementById('weekMatrix');
@@ -6775,6 +6757,33 @@
             return set;
         }
 
+        // Aktive Tage = echte Bewegung: Training (Kraft, Cardio, Bodyweight, Dehnen), Lauf,
+        // erledigte Plan-Einheit, Mini-Einheit oder erreichtes Schrittziel.
+        // NICHT: nur ein paar Schritte, Gewicht oder Ernährung eintragen.
+        function activeDays(src) {
+            const set = new Set();
+            const addDays = obj => Object.keys(obj || {}).forEach(d => {
+                const day = obj[d];
+                const list = day && (day.exercises || day.entries);
+                if (Array.isArray(list) && list.length > 0) set.add(d);
+            });
+            addDays(src.strength);
+            addDays(src.cardio);
+            addDays(src.bw);
+            addDays(src.stretch);
+            (src.runs || []).forEach(r => { if (r && r.date) set.add(r.date); });
+            (src.mini || []).forEach(d => set.add(d));
+            (src.plans || []).forEach(rec => {
+                Object.keys((rec && rec.progress) || {}).forEach(d => {
+                    const p = rec.progress[d];
+                    if (p && p.done) set.add(p.doneOn && p.doneOn < d ? p.doneOn : d);
+                });
+            });
+            const goal = Number(src.stepGoal) || 0;
+            if (goal > 0) Object.keys(src.steps || {}).forEach(d => { if (Number(src.steps[d]) >= goal) set.add(d); });
+            return set;
+        }
+
         // Aktive Tage zählen; Ruhetage überbrücken (zählen aber nicht mit); heute darf noch offen sein
         function activityStreak(activeDates, restDates, todayKey) {
             const active = new Set((activeDates || []).filter(d => d <= todayKey));
@@ -6814,6 +6823,73 @@
             let n = set.has(todayKey) ? toDay(todayKey) : toDay(todayKey) - 1;
             while (set.has(fromDay(n))) { current += 1; n -= 1; }
             return { current, best, today: set.has(todayKey) };
+        }
+
+        // --- Erinnerungen (Android-App) ---
+        // Jede Erinnerung: eigene Uhrzeit, an/aus; die Webseite rechnet aus, an welchen Tagen sie Sinn ergibt.
+        const REMINDER_DEFS = [
+            { id: 'weigh', label: '⚖️ Morgens ans Wiegen', hint: 'Nicht, wenn du heute schon gewogen hast.', time: '07:00', tab: 'overview' },
+            { id: 'training', label: '🏋️ An Trainingstagen (Plan)', hint: 'Nur an Tagen mit offener Einheit aus dem Plan.', time: '17:00', tab: 'plan' },
+            { id: 'streak', label: '🔥 Serie retten', hint: 'Nur, wenn du heute noch nicht aktiv warst und kein Ruhetag ist.', time: '19:00', tab: 'overview' },
+            { id: 'evening', label: '📝 Abends Tageswerte eintragen', hint: 'Nur, wenn heute noch keine Ernährung eingetragen ist.', time: '20:30', tab: 'nutrition' },
+            { id: 'checkin', label: '✅ Check-in fällig', hint: 'Nur, wenn dein Plan abgelaufen ist und der Check-in fehlt.', time: '09:00', tab: 'plan' },
+            { id: 'backup', label: '💾 Backup (sonntags)', hint: 'Nur, wenn dein letztes Backup älter als 7 Tage ist.', time: '19:00', tab: 'profile' }
+        ];
+
+        function addDaysKey(key, n) { return fromDay(toDay(key) + n); }
+
+        // state: { today, settings: {id: {on, time}}, lastWeighDate, openTrainingDays: [{date, title}],
+        //          nutritionDates: [], activeDates: [], restDates: [], streak, plan: {endDate, checkinDone} | null,
+        //          lastBackup }
+        // Ergebnis für die App: je Erinnerung onlyOn (nur an diesen Tagen) / skipOn (nicht an diesen Tagen),
+        // weekday (1 = Mo … 7 = So) und textOn (Text für einen bestimmten Tag).
+        function buildReminders(state) {
+            const t = state.today;
+            const horizon = [];
+            for (let i = 0; i < 21; i++) horizon.push(addDaysKey(t, i));
+            const set = state.settings || {};
+            const out = [];
+            REMINDER_DEFS.forEach(def => {
+                const cfg = set[def.id] || {};
+                const r = {
+                    id: def.id, on: !!cfg.on, time: /^\d{2}:\d{2}$/.test(cfg.time || '') ? cfg.time : def.time,
+                    tab: def.tab, title: '', text: '', skipOn: [], onlyOn: null, weekday: 0, textOn: {}
+                };
+                if (def.id === 'weigh') {
+                    r.title = '⚖️ Zeit zum Wiegen';
+                    r.text = 'Morgens nüchtern wiegen und den Wert in der App eintragen.';
+                    if (state.lastWeighDate) r.skipOn = [state.lastWeighDate];
+                } else if (def.id === 'training') {
+                    r.title = '🏋️ Heute ist Trainingstag';
+                    r.text = 'Heute steht eine Einheit an – du schaffst das!';
+                    r.onlyOn = (state.openTrainingDays || []).map(d => d.date);
+                    (state.openTrainingDays || []).forEach(d => { r.textOn[d.date] = `${d.title || 'Training'} – du schaffst das! Danach in der App abhaken.`; });
+                } else if (def.id === 'streak') {
+                    r.title = '🔥 Heute noch keine Bewegung';
+                    r.text = 'Halte deine Serie: 10 Minuten reichen schon!';
+                    const active = new Set(state.activeDates || []);
+                    const rest = new Set(state.restDates || []);
+                    r.skipOn = horizon.filter(d => active.has(d) || rest.has(d));
+                    if (state.streak > 0) r.textOn[t] = `Deine Serie: ${state.streak} ${state.streak === 1 ? 'Tag' : 'Tage'} – 10 Minuten reichen, um sie zu halten!`;
+                } else if (def.id === 'evening') {
+                    r.title = '📝 Tageswerte eintragen';
+                    r.text = 'Kurz eintragen: Ernährung, Training, „ohne Süßes“ – dann ist der Tag komplett.';
+                    r.skipOn = (state.nutritionDates || []).filter(d => d >= t);
+                } else if (def.id === 'checkin') {
+                    r.title = '✅ Zeit für deinen Check-in';
+                    r.text = 'Dein Trainingsplan ist abgelaufen – kurzer Check-in, dann gibt es den nächsten Plan.';
+                    r.onlyOn = state.plan && !state.plan.checkinDone && state.plan.endDate
+                        ? horizon.filter(d => d > state.plan.endDate)
+                        : [];
+                } else if (def.id === 'backup') {
+                    r.title = '💾 Zeit für ein Backup';
+                    r.text = 'Dein letztes Backup ist über eine Woche her. Profil → „Backup speichern“.';
+                    r.weekday = 7;
+                    if (state.lastBackup) r.skipOn = horizon.filter(d => toDay(d) - toDay(state.lastBackup) < 7);
+                }
+                out.push(r);
+            });
+            return { version: 2, reminders: out };
         }
 
         // --- Bestwerte ---
@@ -6934,7 +7010,7 @@
             { name: 'Dehnen: Oberschenkel, Brust, Rücken', time: '2 Min.', tip: 'Ruhig atmen – geschafft!' }
         ];
 
-        return { restDaySet, activityStreak, simpleStreak, RECORDS, planExerciseMetric, maxNumber, collectEntries, records, newRecords, seenFrom, MINI_SESSION, weekdayIndex };
+        return { REMINDER_DEFS, buildReminders, activeDays, restDaySet, activityStreak, simpleStreak, RECORDS, planExerciseMetric, maxNumber, collectEntries, records, newRecords, seenFrom, MINI_SESSION, weekdayIndex };
     })();
     /* MOTIV-CALC-END */
 
@@ -8032,9 +8108,18 @@
         renderOverview();
     }
 
+    // Aktive Tage frisch aus den Daten (nicht aus activeDatesV2, das auch Schritte/Gewicht zählte)
+    function getActivityDaySet() {
+        return MotivCalc.activeDays({
+            strength: getGymStrengthWorkouts(), cardio: getGymCardioWorkouts(), bw: getBwWorkouts(),
+            stretch: getStretchWorkouts(), runs: getRuns(), plans: getTrainingPlans(),
+            mini: readDateList('miniSessionsV2'), steps: getStepsHistory(), stepGoal: getStepGoal()
+        });
+    }
+
     function getRestDaySetUntilToday() {
         const today = getLocalDateKey();
-        const active = Array.from(getActiveDatesSet()).sort();
+        const active = Array.from(getActivityDaySet()).sort();
         const from = active.length && active[0] < shiftDateKey(today, -6) ? active[0] : shiftDateKey(today, -6);
         return MotivCalc.restDaySet(getTrainingPlans(), getRestWeekdays(), from, shiftDateKey(today, 6));
     }
@@ -8182,26 +8267,73 @@
         return !!(window.AndroidApp && typeof window.AndroidApp.setReminders === 'function');
     }
 
-    function getReminderSettings() {
-        const r = readJson('remindersV2', null) || {};
-        const norm = (o, t) => ({ on: !!(o && o.on), time: o && /^\d{2}:\d{2}$/.test(o.time) ? o.time : t });
-        return { weigh: norm(r.weigh, '07:00'), training: norm(r.training, '17:00') };
+    // Neue App-Versionen (ab Erinnerungen 2) können alle Erinnerungen; ältere nur Wiegen + Training
+    function reminderApiVersion() {
+        if (!hasReminders()) return 0;
+        try { return typeof window.AndroidApp.getReminderApi === 'function' ? Number(window.AndroidApp.getReminderApi()) || 1 : 1; } catch (e) { return 1; }
     }
 
-    // Schickt Einstellungen, offene Trainingstage und den letzten Wiege-Tag an die Android-App
-    function syncRemindersToApp() {
-        if (!hasReminders()) return null;
+    function getReminderSettings() {
+        const r = readJson('remindersV2', null) || {};
+        const out = {};
+        MotivCalc.REMINDER_DEFS.forEach(def => {
+            const o = r[def.id];
+            out[def.id] = { on: !!(o && o.on), time: o && /^\d{2}:\d{2}$/.test(o.time) ? o.time : def.time };
+        });
+        return out;
+    }
+
+    function getOpenTrainingDays() {
         const today = getLocalDateKey();
         const rec = getActivePlan();
-        const trainingDays = rec && !rec.checkin
+        return rec && !rec.checkin
             ? rec.plan.days.filter(d => d.type === 'training' && d.date >= today && !((rec.progress || {})[d.date] || {}).done)
                 .map(d => ({ date: d.date, title: d.title }))
             : [];
+    }
+
+    function buildReminderPayload() {
+        const today = getLocalDateKey();
         const days = WeightCalc.daily(getBodyMetricsLog());
-        const payload = Object.assign(getReminderSettings(), {
-            trainingDays,
-            weighedOn: days.length ? days[days.length - 1].date : null
+        const rec = getActivePlan();
+        const nutri = getNutritionHistory();
+        return MotivCalc.buildReminders({
+            today,
+            settings: getReminderSettings(),
+            lastWeighDate: days.length ? days[days.length - 1].date : null,
+            openTrainingDays: getOpenTrainingDays(),
+            nutritionDates: Object.keys(nutri).filter(d => Array.isArray(nutri[d]) && nutri[d].length > 0),
+            activeDates: Array.from(getActivityDaySet()),
+            restDates: Array.from(getRestDaySetUntilToday()),
+            streak: calculateStreaks().current,
+            plan: rec ? { endDate: rec.dates[rec.dates.length - 1], checkinDone: !!rec.checkin } : null,
+            lastBackup: localStorage.getItem('lastBackupV2')
         });
+    }
+
+    let reminderSyncTimer = null;
+    function scheduleReminderSync() {
+        if (!hasReminders()) return;
+        clearTimeout(reminderSyncTimer);
+        reminderSyncTimer = setTimeout(syncRemindersToApp, 500);
+    }
+
+    // Schickt die Erinnerungen an die Android-App (neues Format v2, für ältere Apps das alte)
+    function syncRemindersToApp() {
+        const api = reminderApiVersion();
+        if (!api) return null;
+        let payload;
+        if (api >= 2) {
+            payload = buildReminderPayload();
+        } else {
+            const set = getReminderSettings();
+            const days = WeightCalc.daily(getBodyMetricsLog());
+            payload = {
+                weigh: set.weigh, training: set.training,
+                trainingDays: getOpenTrainingDays(),
+                weighedOn: days.length ? days[days.length - 1].date : null
+            };
+        }
         try {
             return window.AndroidApp.setReminders(JSON.stringify(payload));
         } catch (e) {
@@ -8210,35 +8342,61 @@
     }
 
     function saveReminders() {
-        const r = {
-            weigh: { on: document.getElementById('remWeighOn').value === '1', time: document.getElementById('remWeighTime').value || '07:00' },
-            training: { on: document.getElementById('remTrainOn').value === '1', time: document.getElementById('remTrainTime').value || '17:00' }
-        };
+        const r = {};
+        MotivCalc.REMINDER_DEFS.forEach(def => {
+            const on = document.getElementById(`rem_${def.id}_on`);
+            const time = document.getElementById(`rem_${def.id}_time`);
+            r[def.id] = { on: !!(on && on.value === '1'), time: (time && time.value) || def.time };
+        });
         localStorage.setItem('remindersV2', JSON.stringify(r));
         const state = syncRemindersToApp();
         renderReminderCard(state);
-        showToast(r.weigh.on || r.training.on ? 'Erinnerungen gespeichert.' : 'Erinnerungen ausgeschaltet.');
+        showToast(Object.values(r).some(x => x.on) ? 'Erinnerungen gespeichert.' : 'Erinnerungen ausgeschaltet.');
     }
 
     function renderReminderCard(stateFromSave) {
         const card = document.getElementById('reminderCard');
         if (!hasReminders()) { card.style.display = 'none'; return; }
         card.style.display = '';
-        const r = getReminderSettings();
-        document.getElementById('remWeighOn').value = r.weigh.on ? '1' : '0';
-        document.getElementById('remWeighTime').value = r.weigh.time;
-        document.getElementById('remTrainOn').value = r.training.on ? '1' : '0';
-        document.getElementById('remTrainTime').value = r.training.time;
+        const api = reminderApiVersion();
+        const set = getReminderSettings();
+        const rows = document.getElementById('reminderRows');
+        rows.innerHTML = '';
+        MotivCalc.REMINDER_DEFS.forEach(def => {
+            const supported = api >= 2 || def.id === 'weigh' || def.id === 'training';
+            const box = el('div', 'plan-day');
+            box.style.padding = '10px 12px';
+            box.dataset.reminder = def.id;
+            box.appendChild(el('div', 'plan-ex-name', def.label));
+            box.appendChild(el('div', 'plan-ex-expl', supported ? def.hint : 'Braucht die neue App-Version.'));
+            const grid = el('div', 'goal-edit-grid');
+            grid.style.marginTop = '6px';
+            const sel = el('select');
+            sel.id = `rem_${def.id}_on`;
+            [['1', 'An'], ['0', 'Aus']].forEach(([v, t]) => { const o = el('option', '', t); o.value = v; sel.appendChild(o); });
+            sel.value = set[def.id].on ? '1' : '0';
+            const time = el('input');
+            time.type = 'time';
+            time.id = `rem_${def.id}_time`;
+            time.value = set[def.id].time;
+            sel.disabled = !supported;
+            time.disabled = !supported;
+            grid.append(sel, time);
+            box.appendChild(grid);
+            rows.appendChild(box);
+        });
+        document.getElementById('remUpdateHint').style.display = api >= 2 ? 'none' : '';
         let state = stateFromSave;
         if (!state) {
             try { state = window.AndroidApp.getNotificationState(); } catch (e) { state = 'ok'; }
         }
-        const anyOn = r.weigh.on || r.training.on;
+        const active = MotivCalc.REMINDER_DEFS.filter(d => set[d.id].on && (api >= 2 || d.id === 'weigh' || d.id === 'training'));
+        const anyOn = active.length > 0;
         const st = document.getElementById('remStatus');
         const blocked = anyOn && state === 'off';
         st.textContent = !anyOn ? 'Erinnerungen sind aus.'
             : (blocked ? '⚠️ Benachrichtigungen sind für die App ausgeschaltet – bitte erlauben.'
-                : `✓ Aktiv${r.weigh.on ? ` · Wiegen ${r.weigh.time}` : ''}${r.training.on ? ` · Training ${r.training.time}` : ''}`);
+                : `✓ Aktiv: ${active.map(d => `${d.label.split(' ').slice(1).join(' ')} ${set[d.id].time}`).join(' · ')}`);
         st.style.color = blocked ? '#ffb48f' : (anyOn ? '#3ddc84' : '');
         document.getElementById('remSettingsBtn').style.display = blocked ? '' : 'none';
     }
@@ -8285,6 +8443,7 @@
         const fileName = `fitness_backup_${getLocalDateKey()}.json`;
         localStorage.setItem('lastBackupV2', getLocalDateKey());
         renderBackupInfo();
+        syncRemindersToApp();
         if (window.AndroidApp && typeof window.AndroidApp.saveFile === 'function') {
             // In der Android-App: Speicherort wählen lassen (Downloads in der App nicht möglich)
             window.AndroidApp.saveFile(fileName, JSON.stringify(payload, null, 2));
