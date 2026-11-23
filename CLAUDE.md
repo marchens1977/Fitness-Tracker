@@ -9,7 +9,8 @@ Samsung-Smartphone) und speichert alle Daten **nur auf dem Gerät** (im Browser-
 Menü unten (seit 23.11.2026): **5 Hauptbereiche**, oben jeweils Unter-Knöpfe:
 - 🏠 **Heute**: Übersicht (Startseite: Schritte, Gewicht-Trend mit Eingabe, Serie,
   Ernährung mit ✓/✗, Schnell-Knöpfe) · Schritte · Ernährung
-- 📋 **Plan**: „Mein Trainingsplan“ (Platzhalter, kommt mit Teil 2)
+- 📋 **Plan**: „Mein Trainingsplan“ (KI-Plan über die Claude-API: Profil, Schwerpunkte,
+  Plan 1/2 Wochen, Abhaken, Check-in, Verlauf, KI-Zugang)
 - 🏋️ **Training**: Kraft (Studio) · Cardio (Studio) · Bodyweight · Laufen · Dehnen
 - 📈 **Fortschritt**: Motivation (Serien, Wochen-Herausforderung, „Warum“, Abzeichen) ·
   Gewicht (Trend, Diagramm, Etappenziele, Wochen-Ø, Tageswerte) · Statistik (Gesamtbilanz,
@@ -31,13 +32,14 @@ die alte Version angezeigt wird.
 - `android/` – eigene **Android-App** (Schrittzähler), siehe Abschnitt „Android-App“.
 - `.github/workflows/android-app.yml` – baut die App-Datei (APK) automatisch bei GitHub.
 - `werkzeuge/` – Prüf- und Hilfsprogramme (siehe Abschnitt „Prüfungen und Werkzeuge“).
-- `test/` – automatische Prüfungen der Update-Suche.
+- `test/` – automatische Prüfungen (Update-Suche, Gewicht, Trainingsplan, Bedienung).
 
 Wichtige Details in `index.html`:
 - Gespeicherte Daten (localStorage-Schlüssel, alle mit Endung `V2`), z. B.
   `gymStrengthWorkoutsV2`, `gymCardioWorkoutsV2`, `bwWorkoutsV2`, `stretchWorkoutsV2`,
   `runningLogsV2`, `stepsHistoryV2`, `dailyStepGoalV2`, `nutritionHistoryV2`,
-  `nutritionGoalsV2`, `userWeightV2`, `userGoalWeightV2`, `userBodyFatV2` (nur noch
+  `nutritionGoalsV2`, `trainingProfileV2`, `trainingPlansV2`, `aiUsageV2`, `aiApiKeyV2`
+  (nur auf dem Gerät, **nie im Backup**), `userWeightV2`, `userGoalWeightV2`, `userBodyFatV2` (nur noch
   still gespeichert, nicht angezeigt), `bodyMetricsLogV2`, `weightMilestonesV2`, `userDobV2`,
   `personalWhyV2`, `activeDatesV2`.
   **Diese Namen nicht ändern**, sonst sind bestehende Daten auf dem Handy „weg“.
@@ -70,6 +72,35 @@ Wichtige Details in `index.html`:
   - **Für den KI-Check-in (Teil 2) vorbereitet:** `getWeightCheckinData()` liefert 7-Tage-Ø,
     Veränderung zur Vorwoche, Trend (fällt/steigt/stabil), Wochen-Ø der letzten 4 Wochen,
     Start-Ø, verloren, Ziel – **kein einzelner Tageswert**. Diese Daten bekommt die KI.
+- **KI-Trainingsplan (Teil 2, seit 23.11.2026):**
+  - Modell **Claude Opus 5.5** (`claude-opus-5-5`, Wahl des Nutzers), Preis 4 $ / 20 $ je 1 Mio.
+    Tokens. Ein 2-Wochen-Plan ca. 0,20–0,35 $, 1 Woche ca. 0,10–0,20 $. Kosten werden nach jedem
+    Plan angezeigt und in `aiUsageV2` aufsummiert.
+  - Anfrage direkt aus dem Browser an `https://api.anthropic.com/v1/messages` (einfaches `fetch`,
+    kein SDK – die App ist eine einzelne Datei ohne Bau-Schritt und soll keine fremden Skripte
+    laden). Kopfzeilen: `x-api-key`, `anthropic-version: 2026-10-21`,
+    `anthropic-dangerous-direct-browser-access: true`. Antwort Stück für Stück (`stream: true`),
+    festes JSON-Format (`output_config.format` mit `PLAN_SCHEMA`), `effort: medium`,
+    Ersatzmodell bei Ablehnung (`fallbacks: "default"` + Beta-Kopfzeile; meldet die API dazu
+    einen 400-Fehler, wird automatisch ohne diese Funktion wiederholt).
+  - **Schlüssel:** gibt der Nutzer im Plan-Bereich ein, liegt nur in `aiApiKeyV2` auf dem Gerät,
+    kommt nie ins Backup, Knopf „Schlüssel löschen“. Empfehlung: eigener Schlüssel nur für die App
+    mit Ausgabenlimit in der Anthropic-Konsole. Restrisiko: wer das entsperrte Handy hat, könnte ihn
+    auslesen (dafür das Limit). Sicherere Alternative wäre ein eigener Zwischen-Server – bewusst
+    nicht gewählt (Aufwand, private App).
+  - Rechen-/Anfrage-Teil im Block `PLAN-CALC-START … PLAN-CALC-END` (`PlanCalc`): Systemanweisung
+    (langsamer Wiedereinstieg, Geräte/Zeit/Einschränkungen beachten, nur Gewicht – keine Maße,
+    kein Körperfett, Wochen-Ø statt Tageswert), Anfrage-Inhalt (Profil, Gewicht über
+    `getWeightCheckinData()`, Ernährungsziele, Aktivität 14 Tage, letzter Plan mit erledigten
+    Einheiten/Schwierigkeit/Wiederholungen, Check-in, Schwerpunkte, Tage), Datenstrom lesen,
+    Plan prüfen (`normalizePlan`: jeder Tag genau einmal, fehlende Tage = Ruhetag).
+  - Ablauf: Profil (einmal) → Schwerpunkte (Mehrfachauswahl + Wünsche) + 1/2 Wochen + Start
+    (heute/morgen/nächster Montag) → Plan. Einheiten abhaken mit Schwierigkeit (zu leicht /
+    genau richtig / schwer / zu schwer), Wiederholungen bei `tracksReps`-Übungen, Notiz; zählt
+    als aktiver Tag. Nach Ablauf (oder vorzeitig) Check-in (wie lief es, zu leicht, zu schwer,
+    Gewichts-Ø) → neue Schwerpunkte → nächster Plan; die KI schreibt dabei einen kurzen ehrlichen
+    Wochenrückblick (`plan.review`). Alte Pläne mit Schwerpunkten und Check-in im „Verlauf“.
+  - Startseite: Karte „Heute laut Plan“.
 - **Entfernt am 23.11.2026** (Wunsch des Nutzers, es gab noch keine echten Daten):
   Wasser-Tracker (`waterV2`/`waterHistoryV2` werden beim Start gelöscht), Sync-Knöpfe und
   Hinweise auf adidas Running/Yazio/Health Connect, die Fremd-Schnittstelle
@@ -127,6 +158,14 @@ Wichtige Details in `index.html`:
   7-Tage-Ø mit Lücken, Kalenderwochen Mo–So (auch Jahreswechsel), Veränderung zur Vorwoche (keine
   falschen Vergleiche über fehlende Wochen), Hinweise (Schwankung, ideales Tempo, zu schnell),
   „verloren“, Etappenziele, Daten für den KI-Check-in.
+- `node test/plan_test.js` – prüft den KI-Plan-Teil ohne Browser/Internet: Zeitraum, Kosten,
+  Anfrage (Modell, JSON-Format, kein Schlüssel im Inhalt, Gewicht als Ø/Trend, Schwerpunkte,
+  Check-in, letzter Plan), JSON-Schema nach API-Regeln, Datenstrom lesen (Stücke, Fehler,
+  Modellwechsel), Plan prüfen, Fortschritt.
+- `node test/plan_web_test.js` – spielt den ganzen Plan-Ablauf im Browser durch, die Claude-API
+  wird **nachgespielt** (kein Guthaben, kein echter Schlüssel): Profil, Schlüssel, Fehlermeldungen
+  (falscher Schlüssel, kein Guthaben), Plan erstellen, Kopfzeilen, Abhaken, Check-in, nächster
+  Plan, Verlauf, Backup ohne Schlüssel, Schlüssel löschen.
 - `node test/app_test.js` – prüft die Bedienung: 5 Menü-Knöpfe und Unter-Knöpfe, Start auf
   „Übersicht“, kein Körperfett/Yazio/adidas/Wasser, Lauf-Zeit „32:15“ → Pace/km/h, Nachtragen
   für gestern, Ernährung mit Zielen (✓/✗), Gewicht, Schritte aus der Android-App
@@ -224,6 +263,26 @@ Wichtige Details in `index.html`:
   mit Feier (aus Teil 3 vorgezogen), „verloren“ nach Ø, Daten für den KI-Check-in vorbereitet.
   Neuer Test `test/gewicht_test.js`. Wiege-Erinnerung: später zusammen mit Teil 3 (eine APK-Runde).
 
+- 23.11.2026 – Teil 2 „KI-Trainingsplan“: Modell Claude Opus 5.5 (Wahl des Nutzers), direkt auf
+  `main`. Profil, Schwerpunkte, Plan 1/2 Wochen, Abhaken mit Schwierigkeit/Wiederholungen,
+  Check-in mit KI-Wochenrückblick, Verlauf, Kosten-Anzeige, Schlüssel nur lokal.
+  Neue Tests `test/plan_test.js`, `test/plan_web_test.js`. **Echte KI-Anfrage noch ungetestet**
+  (Claude hat keinen Schlüssel des Nutzers und verbraucht kein fremdes Guthaben).
+
+### Test-Liste Teil 2 „KI-Trainingsplan“ (zum Abhaken am Handy)
+- [ ] In der Anthropic-Konsole eigenen Schlüssel für die App anlegen + Ausgabenlimit (z. B. 5 $/Monat).
+- [ ] Plan → unten „KI-Zugang“: Schlüssel einfügen → „✓ Schlüssel gespeichert (…xxxx)“.
+- [ ] Trainingsprofil ausfüllen und speichern → kurze Zusammenfassung erscheint.
+- [ ] Schwerpunkte wählen, 1 Woche, „Plan von der KI erstellen lassen“ → nach 1–3 Min. steht der Plan da
+      (App währenddessen offen lassen). **Erster echter Test der KI-Anbindung!**
+- [ ] Kosten-Meldung erscheint; in der Konsole stimmt der Betrag ungefähr.
+- [ ] Startseite zeigt „Heute laut Plan“.
+- [ ] Einheit aufklappen → „Wie schwer?“ wählen, Klimmzüge eintragen → „Als erledigt speichern“ → ✓.
+- [ ] „Check-in vorzeitig machen“ → ausfüllen → neue Schwerpunkte → nächster Plan mit „KI-Rückblick“.
+- [ ] Alter Plan steht im „Verlauf“ (aufklappbar, mit Check-in).
+- [ ] Backup speichern → Datei enthält **keinen** Schlüssel (beginnt mit sk-ant-).
+- [ ] Falls eine Fehlermeldung kommt: Text notieren und Claude zeigen.
+
 ### Test-Liste Gewicht (zum Abhaken am Handy)
 - [ ] Startseite: Gewicht eintragen (z. B. 92,4) → „Heute: 92,4 kg“ klein, groß „Ø …“.
 - [ ] Am selben Tag nochmal eintragen → Rückfrage „Durch … ersetzen?“; „Abbrechen“ lässt den alten Wert.
@@ -250,12 +309,10 @@ Wichtige Details in `index.html`:
 
 - **Auftrag vom 23.11.2026 (Teile nacheinander, nach jedem Teil dem Nutzer zeigen):**
   - [x] Teil 1 – Aufräumen (Menü, Startseite, Reihenfolge) + Ernährung/Laufen manuell.
-  - [ ] Teil 2 – KI-Trainingsplan („Mein Trainingsplan“): Profil (nur lokal), Plan 1 oder
-        2 Wochen über die Claude-API (Schlüssel gibt der Nutzer in der App ein, nur lokal),
-        Wochen-Schwerpunkte, Einheiten abhaken mit Schwierigkeit/Wiederholungen, Check-in
-        (Gewicht dort über `getWeightCheckinData()`: Wochen-Ø + Trend, nicht Tageswert).
+  - [x] Teil 2 – KI-Trainingsplan (23.11.; echte KI-Anfrage noch vom Nutzer zu testen).
   - [ ] Teil 3 – Motivation: Serie mit Ruhetagen, ~~Etappenziele mit Feier~~ (erledigt 23.11.),
-        Bestwerte + „Neuer Rekord!“, KI-Wochenrückblick, 10-Min-Mini-Einheit,
+        Bestwerte + „Neuer Rekord!“ (Wiederholungen aus dem Plan nutzen), ~~KI-Wochenrückblick~~
+        (im Check-in von Teil 2 erledigt), 10-Min-Mini-Einheit,
         „heute ohne Süßes“-Serie, Erinnerungen über die Android-App (Trainingstage **und**
         morgendliche Wiege-Erinnerung, Uhrzeit wählbar – zusammen in einer APK-Runde).
   - [ ] Teil 4 – Export/Import aller neuen Daten.

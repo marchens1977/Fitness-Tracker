@@ -30,6 +30,15 @@ const { chromium } = require('playwright');
         }
         localStorage.setItem('bodyMetricsLogV2', JSON.stringify(log));
         localStorage.setItem('userGoalWeightV2', '85.0');
+        // Beispiel-Trainingsplan (ohne KI erzeugt), damit die Plan-Seite etwas zeigt
+        localStorage.setItem('trainingProfileV2', JSON.stringify({ age: 48, heightCm: 182, level: 'Wiedereinsteiger (länger kein Sport)', experience: '', equipment: ['Klimmzugstange', 'Fitnessstudio'], equipmentOther: '', daysPerWeek: 3, minutesPerSession: 45, goals: ['Abnehmen', 'Kraft'], limitations: '' }));
+        const dates = PlanCalc.periodDates(shiftDateKey(t, -2), 1);
+        const plan = PlanCalc.normalizePlan({ title: 'Sanfter Wiedereinstieg', summary: 'Drei kurze Ganzkörper-Einheiten, Technik vor Gewicht.', review: '', nutritionTips: ['Zu jeder Mahlzeit eine Eiweißquelle'], safetyNotes: [],
+            days: dates.map((d, i) => i % 2 === 0 ? { date: d, type: 'training', title: 'Ganzkörper Studio', durationMin: 45, warmup: '5 Min. Rudergerät locker', cooldown: '5 Min. Dehnen', notes: 'Ruhig angehen, Technik zählt.', exercises: [
+                { name: 'Klimmzüge (negativ)', sets: 3, reps: '3–5', restSec: 90, explanation: 'Oben starten und 3–4 Sekunden langsam ablassen.', tracksReps: true },
+                { name: 'Beinpresse', sets: 3, reps: '12', restSec: 60, explanation: 'Knie nicht ganz durchstrecken, Rücken an der Lehne.', tracksReps: false }] }
+                : { date: d, type: 'ruhe', title: 'Ruhetag', durationMin: 0, warmup: '', exercises: [], cooldown: '', notes: 'Lockerer Spaziergang' }) }, dates);
+        localStorage.setItem('trainingPlansV2', JSON.stringify([{ id: 'p1', createdAt: '', startDate: dates[0], weeks: 1, dates, focus: { options: ['gym', 'strength'], text: '' }, plan, progress: { [dates[0]]: { done: true, difficulty: 2, reps: { 0: '4, 4, 3' }, note: '', doneOn: dates[0] } }, checkin: null, costUsd: 0.21 }]));
     });
     for (const tab of ['overview', 'steps', 'nutrition', 'running', 'weight', 'stats', 'motivation', 'gym-strength', 'plan', 'profile']) {
         await page.evaluate(t => { initApp(); switchTab(t); }, tab);

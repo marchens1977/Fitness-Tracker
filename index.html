@@ -840,6 +840,50 @@
             font-weight: 700;
         }
 
+        /* Trainingsplan */
+        .plan-day {
+            border: 1px solid #232c41;
+            border-radius: 12px;
+            margin-top: 8px;
+            background: #131a2c;
+            overflow: hidden;
+        }
+
+        .plan-day.today { border-color: #ff5910; }
+        .plan-day.rest { opacity: 0.75; }
+
+        .plan-day-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 12px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            width: 100%;
+            min-height: 0;
+            color: #fff;
+            text-align: left;
+            font-size: 0.9rem;
+            margin: 0;
+            border-radius: 0;
+        }
+
+        .plan-day-head .pd-date { color: #9aa4ba; font-size: 0.8rem; min-width: 64px; }
+        .plan-day-head .pd-title { flex: 1; font-weight: 600; }
+        .plan-day-head .pd-status { font-weight: 800; min-width: 20px; text-align: right; }
+        .plan-day-head .pd-status.done { color: #3ddc84; }
+
+        .plan-day-body { padding: 0 12px 12px 12px; font-size: 0.88rem; }
+        .plan-ex { padding: 8px 0; border-top: 1px solid #222b40; }
+        .plan-ex-name { color: #fff; font-weight: 600; }
+        .plan-ex-meta { color: #ff5910; font-size: 0.82rem; font-weight: 600; }
+        .plan-ex-expl { color: #aab3c7; font-size: 0.82rem; margin-top: 2px; }
+        .plan-sub { color: #6e9bff; font-weight: 700; font-size: 0.8rem; margin-top: 8px; }
+        .plan-done-box { margin-top: 10px; padding: 10px; border-radius: 10px; background: #182036; }
+        .plan-gen-status { font-size: 0.85rem; color: #ffb48f; margin: 8px 0 0 0; }
+
         /* Fenster in der Seite (Rückfrage, Feier) */
         .modal-backdrop {
             position: fixed;
@@ -963,6 +1007,13 @@
             </div>
         </div>
 
+        <div class="card" id="ovPlanCard" style="display: none;">
+            <h2>Heute laut Plan</h2>
+            <p id="ovPlanText" style="margin: 0 0 8px 0; color: #fff; font-weight: 600;"></p>
+            <p class="muted" id="ovPlanSub" style="margin: 0 0 8px 0; font-size: 0.85rem;"></p>
+            <button type="button" class="btn-secondary" onclick="openPlanToday()">Zum Plan</button>
+        </div>
+
         <div class="card" id="ovWeightCard">
             <h2>Gewicht (Trend)</h2>
             <div class="hero-box">
@@ -1010,9 +1061,125 @@
 
     <!-- PLAN: MEIN TRAININGSPLAN (kommt in Teil 2) -->
     <section class="tab-panel" id="tab-plan">
-        <div class="card">
-            <h2>Mein Trainingsplan</h2>
-            <p class="muted">Hier entsteht bald dein persönlicher Trainingsplan (1 oder 2 Wochen), den die KI aus deinem Profil und deinen Wünschen erstellt.</p>
+        <!-- Aktueller Plan (per JavaScript gefüllt) -->
+        <div class="card" id="planCurrentCard" style="display: none;">
+            <div id="planCurrent"></div>
+        </div>
+
+        <!-- Check-in nach Ablauf des Zeitraums -->
+        <div class="card" id="planCheckinCard" style="display: none;">
+            <h2>Check-in</h2>
+            <p class="muted" style="font-size: 0.85rem; margin-top: 0;">Kurzer Rückblick auf den letzten Zeitraum. Die KI passt damit den nächsten Plan an.</p>
+            <div class="plan-sub">Gewicht (Wochen-Durchschnitt)</div>
+            <p id="checkinWeightInfo" style="margin: 4px 0 8px 0;"></p>
+            <div class="btn-row" style="margin-top: 0;" id="checkinWeightRow">
+                <input type="text" id="checkinWeightInput" inputmode="decimal" placeholder="Gewicht heute (kg)" style="margin-bottom: 0;">
+                <button type="button" class="btn-secondary" style="max-width: 130px;" onclick="saveWeightFromInput('checkinWeightInput')">Speichern</button>
+            </div>
+            <label class="field-label" for="checkinHow" style="margin-top: 12px;">Wie lief es?</label>
+            <textarea id="checkinHow" placeholder="z. B. 3 von 4 Einheiten geschafft, gute Laune, einmal krank"></textarea>
+            <label class="field-label" for="checkinEasy">Was war zu leicht?</label>
+            <textarea id="checkinEasy" placeholder="z. B. Dehnen, Rudern am Gerät"></textarea>
+            <label class="field-label" for="checkinHard">Was war zu schwer?</label>
+            <textarea id="checkinHard" placeholder="z. B. Klimmzüge, Ausfallschritte (Knie)"></textarea>
+            <button type="button" onclick="saveCheckin()">Check-in speichern</button>
+        </div>
+
+        <!-- Neuer Plan: Schwerpunkte wählen -->
+        <div class="card" id="planNewCard" style="display: none;">
+            <h2 id="planNewTitle">Neuen Plan erstellen</h2>
+            <div class="plan-sub">Schwerpunkte für diesen Zeitraum (mehrere möglich)</div>
+            <div class="chip-row" id="planFocusChips" style="flex-wrap: wrap;"></div>
+            <label class="field-label" for="planFocusText">Wünsche (optional)</label>
+            <textarea id="planFocusText" placeholder="z. B. diese Woche wenig Zeit, Dienstag geht nicht"></textarea>
+            <div class="plan-sub">Zeitraum</div>
+            <div class="chip-row" id="planWeeksChips">
+                <button type="button" class="chip" data-weeks="1" onclick="setPlanWeeks(1)">1 Woche</button>
+                <button type="button" class="chip active" data-weeks="2" onclick="setPlanWeeks(2)">2 Wochen</button>
+            </div>
+            <div class="plan-sub">Start</div>
+            <div class="chip-row" id="planStartChips"></div>
+            <p class="muted" id="planCostHint" style="font-size: 0.8rem; margin: 4px 0 8px 0;"></p>
+            <button type="button" id="planCreateBtn" onclick="createTrainingPlan()">Plan von der KI erstellen lassen</button>
+            <p class="plan-gen-status" id="planGenStatus" style="display: none;"></p>
+        </div>
+
+        <!-- Trainingsprofil (nur auf diesem Gerät gespeichert) -->
+        <div class="card" id="planProfileCard">
+            <h2>Mein Trainingsprofil</h2>
+            <div id="tpSummary"></div>
+            <div id="tpForm">
+                <div class="input-split">
+                    <div>
+                        <label class="field-label" for="tpAge">Alter</label>
+                        <input type="text" id="tpAge" inputmode="numeric" placeholder="z. B. 48">
+                    </div>
+                    <div>
+                        <label class="field-label" for="tpHeight">Größe (cm)</label>
+                        <input type="text" id="tpHeight" inputmode="numeric" placeholder="z. B. 182">
+                    </div>
+                </div>
+                <div class="input-split">
+                    <div>
+                        <label class="field-label" for="tpWeight">Aktuelles Gewicht (kg)</label>
+                        <input type="text" id="tpWeight" inputmode="decimal" placeholder="z. B. 92,5">
+                    </div>
+                    <div>
+                        <label class="field-label" for="tpGoal">Zielgewicht (kg)</label>
+                        <input type="text" id="tpGoal" inputmode="decimal" placeholder="z. B. 85">
+                    </div>
+                </div>
+                <label class="field-label" for="tpLevel">Fitnesslevel</label>
+                <select id="tpLevel">
+                    <option value="Wiedereinsteiger (länger kein Sport)">Wiedereinsteiger (länger kein Sport)</option>
+                    <option value="Einsteiger">Einsteiger</option>
+                    <option value="leicht fortgeschritten">leicht fortgeschritten</option>
+                    <option value="fortgeschritten">fortgeschritten</option>
+                </select>
+                <label class="field-label" for="tpExperience">Frühere Sporterfahrung</label>
+                <textarea id="tpExperience" placeholder="z. B. 10 Jahre Fußball, früher Fitnessstudio"></textarea>
+                <div class="plan-sub">Verfügbare Geräte</div>
+                <div class="chip-row" id="tpEquip" style="flex-wrap: wrap;"></div>
+                <input type="text" id="tpEquipOther" placeholder="Weitere Geräte (optional), z. B. Kettlebell 12 kg">
+                <div class="input-split">
+                    <div>
+                        <label class="field-label" for="tpDays">Trainingstage pro Woche</label>
+                        <select id="tpDays">
+                            <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option>
+                            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label" for="tpMinutes">Minuten pro Einheit</label>
+                        <input type="text" id="tpMinutes" inputmode="numeric" placeholder="z. B. 45">
+                    </div>
+                </div>
+                <div class="plan-sub">Ziele</div>
+                <div class="chip-row" id="tpGoals" style="flex-wrap: wrap;"></div>
+                <label class="field-label" for="tpLimits">Einschränkungen (optional)</label>
+                <textarea id="tpLimits" placeholder="z. B. Knie links empfindlich, Rücken nach langem Sitzen"></textarea>
+                <button type="button" onclick="saveTrainingProfile()">Profil speichern</button>
+            </div>
+        </div>
+
+        <!-- Verlauf: alte Pläne mit Schwerpunkten und Check-ins -->
+        <div class="card" id="planHistoryCard" style="display: none;">
+            <h2>Verlauf</h2>
+            <div id="planHistory"></div>
+        </div>
+
+        <!-- KI-Zugang -->
+        <div class="card" id="planKeyCard">
+            <h2>KI-Zugang (Claude)</h2>
+            <p id="aiKeyStatus" style="margin-top: 0;"></p>
+            <div id="aiKeyForm">
+                <label class="field-label" for="aiKeyInput">API-Schlüssel von Anthropic</label>
+                <input type="password" id="aiKeyInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…">
+                <button type="button" onclick="saveApiKey()">Schlüssel speichern</button>
+            </div>
+            <button type="button" class="btn-secondary" id="aiKeyDeleteBtn" onclick="deleteApiKey()" style="display: none;">Schlüssel löschen</button>
+            <p class="muted" style="font-size: 0.8rem; margin-bottom: 0;">Der Schlüssel bleibt nur auf diesem Gerät und kommt nicht ins Backup. Tipp: In der Anthropic-Konsole einen eigenen Schlüssel nur für diese App anlegen und ein Ausgabenlimit setzen. Modell: Claude Opus 5.5.</p>
+            <p class="muted" id="aiUsageInfo" style="font-size: 0.8rem; margin-bottom: 0;"></p>
         </div>
     </section>
 
@@ -2117,6 +2284,8 @@
             renderNutrition();
         } else if (tabKey === 'overview') {
             renderOverview();
+        } else if (tabKey === 'plan') {
+            renderPlanPage();
         }
     }
 
@@ -4014,6 +4183,7 @@
         document.getElementById('ovStreak').textContent = streaks.current === 1 ? '1 Tag' : `${streaks.current} Tage`;
         document.getElementById('ovBestStreak').textContent = streaks.best === 1 ? '1 Tag' : `${streaks.best} Tage`;
         renderOverviewWeight();
+        renderOverviewPlan();
 
         renderNutritionGoalRows(document.getElementById('ovNutritionGoals'), getNutritionTotals(today), true);
     }
@@ -6314,6 +6484,7 @@
         const nut = getNutritionHistory()[dateKey];
         if (Array.isArray(nut) && nut.length > 0) return true;
         if (getBodyMetricsLog().some(m => m.date === dateKey)) return true;
+        if (planDoneOnDate(dateKey)) return true;
         return false;
     }
 
@@ -6466,6 +6637,1069 @@
         });
     }
 
+    /* PLAN-CALC-START  (KI-Trainingsplan: reine Funktionen, werden von test/plan_test.js direkt geprüft)
+       - Anfrage an die Claude-API bauen (ohne Schlüssel – der kommt nur in den Kopf der Anfrage)
+       - Antwort (Stück für Stück, "Server-Sent Events") zusammensetzen
+       - Plan prüfen und vervollständigen, Fortschritt und Kosten berechnen */
+    const PlanCalc = (() => {
+        const MODEL = 'claude-opus-5-5';
+        const PRICE_PER_MTOK = { input: 4, output: 20 }; // US-Dollar je 1 Mio. Tokens (Claude Opus 5.5, Stand 11/2026)
+        const DAY_NAMES = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+        const DIFFICULTY = { 1: 'zu leicht', 2: 'genau richtig', 3: 'schwer', 4: 'zu schwer' };
+        const FOCUS_OPTIONS = [
+            ['gym', 'Training im Fitnessstudio'], ['home', 'Training zu Hause'], ['run', 'Mehr Laufen'],
+            ['strength', 'Mehr Kraft'], ['endurance', 'Mehr Ausdauer'], ['mix', 'Mischung']
+        ];
+
+        function toDay(key) {
+            const [y, m, d] = key.split('-').map(Number);
+            return Math.round(Date.UTC(y, m - 1, d) / 86400000);
+        }
+        function fromDay(n) {
+            const d = new Date(n * 86400000);
+            return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+        }
+        function shift(key, delta) { return fromDay(toDay(key) + delta); }
+        function weekday(key) { return DAY_NAMES[new Date(toDay(key) * 86400000).getUTCDay()]; }
+
+        function periodDates(startKey, weeks) {
+            const n = (weeks === 2 ? 2 : 1) * 7;
+            const list = [];
+            for (let i = 0; i < n; i++) list.push(shift(startKey, i));
+            return list;
+        }
+
+        function nextMonday(todayKey) {
+            const dow = (new Date(toDay(todayKey) * 86400000).getUTCDay() + 6) % 7; // Mo = 0
+            return shift(todayKey, dow === 0 ? 7 : 7 - dow);
+        }
+
+        function costUsd(usage) {
+            if (!usage) return 0;
+            return ((Number(usage.input) || 0) * PRICE_PER_MTOK.input + (Number(usage.output) || 0) * PRICE_PER_MTOK.output) / 1e6;
+        }
+
+        // Festes Antwortformat (JSON-Schema) – die KI muss sich genau daran halten
+        const PLAN_SCHEMA = {
+            type: 'object',
+            additionalProperties: false,
+            required: ['title', 'summary', 'review', 'days', 'nutritionTips', 'safetyNotes'],
+            properties: {
+                title: { type: 'string' },
+                summary: { type: 'string' },
+                review: { type: 'string' },
+                days: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        additionalProperties: false,
+                        required: ['date', 'type', 'title', 'durationMin', 'warmup', 'exercises', 'cooldown', 'notes'],
+                        properties: {
+                            date: { type: 'string', format: 'date' },
+                            type: { type: 'string', enum: ['training', 'ruhe'] },
+                            title: { type: 'string' },
+                            durationMin: { type: 'integer' },
+                            warmup: { type: 'string' },
+                            exercises: {
+                                type: 'array',
+                                items: {
+                                    type: 'object',
+                                    additionalProperties: false,
+                                    required: ['name', 'sets', 'reps', 'restSec', 'explanation', 'tracksReps'],
+                                    properties: {
+                                        name: { type: 'string' },
+                                        sets: { type: 'integer' },
+                                        reps: { type: 'string' },
+                                        restSec: { type: 'integer' },
+                                        explanation: { type: 'string' },
+                                        tracksReps: { type: 'boolean' }
+                                    }
+                                }
+                            },
+                            cooldown: { type: 'string' },
+                            notes: { type: 'string' }
+                        }
+                    }
+                },
+                nutritionTips: { type: 'array', items: { type: 'string' } },
+                safetyNotes: { type: 'array', items: { type: 'string' } }
+            }
+        };
+
+        const SYSTEM_PROMPT = [
+            'Du bist ein erfahrener, freundlicher Personal Trainer und erstellst Trainingspläne für eine einzelne Person, die eine private Fitness-App auf dem Handy nutzt.',
+            'Schreibe alles auf Deutsch, in einfachen Worten, ohne Fachchinesisch.',
+            '',
+            'Grundsätze:',
+            '- Die Person steigt wieder ein. Beim ersten Plan bewusst langsam und mit wenig Umfang beginnen; danach nur in kleinen Schritten steigern, passend zu ihren Rückmeldungen (was zu leicht oder zu schwer war, geschaffte Wiederholungen).',
+            '- Halte dich genau an verfügbare Geräte, Trainingstage pro Woche und Zeit pro Einheit. Nimm die genannten Einschränkungen ernst und wähle im Zweifel die schonendere Übung.',
+            '- Berücksichtige die gewählten Schwerpunkte und Wünsche für diesen Zeitraum.',
+            '- Als Körperwert gibt es nur das Gewicht. Erwähne oder empfiehl keine Körpermaße, kein Körperfett und keine Fotos. Beim Gewicht zählt der Wochendurchschnitt und der Trend, nicht ein einzelner Tageswert.',
+            '- Keine medizinischen Diagnosen. Bei Schmerzen oder Beschwerden: Übung abbrechen und ärztlich abklären lassen.',
+            '',
+            'Format:',
+            '- Für JEDES Datum aus der Liste "Tage" genau einen Eintrag in "days", in derselben Reihenfolge. Tage ohne Training: type "ruhe" mit leerer Übungsliste, durationMin 0, als Tipp z. B. lockerer Spaziergang.',
+            '- Pro Übung: Sätze, Wiederholungen als Text (z. B. "8–10", "3 × 30 Sek.", "20 Min. locker"), Pause in Sekunden und eine kurze Erklärung (1–2 Sätze: Ausführung und worauf achten).',
+            '- tracksReps = true bei Übungen, deren geschaffte Wiederholungen sich zum Vergleichen lohnen (z. B. Klimmzüge, Liegestütze, Kniebeugen ohne Gewicht).',
+            '- warmup und cooldown kurz und konkret. notes: ein Satz, worauf es an diesem Tag ankommt (oder leer).',
+            '- nutritionTips: 3–5 einfache, alltagstaugliche Ernährungstipps passend zu Ziel und Ernährungszielen.',
+            '- safetyNotes: 0–3 kurze Hinweise, nur wenn sinnvoll (z. B. wegen Einschränkungen).',
+            '- summary: 2–4 Sätze, was der Plan will und warum er so aufgebaut ist.',
+            '- review: Nur wenn ein Check-in mitgeschickt wird: ein kurzer, ehrlicher Wochenrückblick (3–5 Sätze): was gut lief, was nicht, worauf in diesem Zeitraum achten. Freundlich, aber ohne Schönfärberei. Ohne Check-in: leerer Text.'
+        ].join('\n');
+
+        function focusLabels(focus) {
+            const map = Object.fromEntries(FOCUS_OPTIONS);
+            return ((focus && focus.options) || []).map(k => map[k] || k);
+        }
+
+        // Kurzfassung des letzten Plans für die KI: was geplant war und was geschafft wurde
+        function previousPlanDigest(planRec) {
+            if (!planRec || !planRec.plan) return null;
+            const progress = planRec.progress || {};
+            return {
+                zeitraum: `${planRec.dates[0]} bis ${planRec.dates[planRec.dates.length - 1]}`,
+                schwerpunkte: focusLabels(planRec.focus),
+                einheiten: planRec.plan.days.filter(d => d.type === 'training').map(d => {
+                    const p = progress[d.date] || {};
+                    const reps = {};
+                    d.exercises.forEach((ex, i) => {
+                        if (p.reps && p.reps[i]) reps[ex.name] = p.reps[i];
+                    });
+                    return {
+                        datum: d.date,
+                        titel: d.title,
+                        geplant: d.exercises.map(ex => `${ex.name}: ${ex.sets} × ${ex.reps}`),
+                        erledigt: !!p.done,
+                        empfunden: p.done ? (DIFFICULTY[p.difficulty] || 'keine Angabe') : null,
+                        geschafft: Object.keys(reps).length ? reps : undefined,
+                        notiz: p.note || undefined
+                    };
+                })
+            };
+        }
+
+        function buildUserContent(ctx) {
+            const p = ctx.profile || {};
+            const data = {
+                profil: {
+                    alter: p.age || null,
+                    groesseCm: p.heightCm || null,
+                    fitnesslevel: p.level || null,
+                    sporterfahrung: p.experience || '',
+                    geraete: [...(p.equipment || []), ...(p.equipmentOther ? [p.equipmentOther] : [])],
+                    trainingstageProWoche: p.daysPerWeek || null,
+                    minutenProEinheit: p.minutesPerSession || null,
+                    ziele: p.goals || [],
+                    einschraenkungen: p.limitations || ''
+                },
+                gewicht: ctx.weight && ctx.weight.hasData ? {
+                    durchschnitt7TageKg: ctx.weight.avg7Kg,
+                    veraenderungZurVorwocheKg: ctx.weight.changeVsPrevWeekKg,
+                    trend: ctx.weight.trend,
+                    wochenDurchschnitte: ctx.weight.lastWeeks,
+                    startDurchschnittKg: ctx.weight.startAvgKg,
+                    seitStartVerlorenKg: ctx.weight.lostKg,
+                    zielgewichtKg: ctx.weight.goalKg
+                } : { hinweis: 'Noch keine Gewichtswerte', zielgewichtKg: p.goalWeightKg || null },
+                ernaehrungsziele: ctx.nutritionGoals || null,
+                aktivitaetLetzte14Tage: ctx.activity || null,
+                ersterPlan: !ctx.previousPlan,
+                vorherigerPlan: previousPlanDigest(ctx.previousPlan),
+                checkIn: ctx.checkin ? {
+                    wieLiefEs: ctx.checkin.howItWent || '',
+                    zuLeicht: ctx.checkin.tooEasy || '',
+                    zuSchwer: ctx.checkin.tooHard || ''
+                } : null,
+                diesmal: {
+                    wochen: ctx.weeks,
+                    tage: ctx.dates.map(d => `${d} (${weekday(d)})`),
+                    schwerpunkte: focusLabels(ctx.focus),
+                    wuensche: (ctx.focus && ctx.focus.text) || ''
+                }
+            };
+            return 'Erstelle meinen Trainingsplan für den folgenden Zeitraum. Hier sind meine Daten:\n\n' +
+                JSON.stringify(data, null, 2);
+        }
+
+        function buildRequestBody(ctx) {
+            return {
+                model: MODEL,
+                max_tokens: 32000,
+                stream: true,
+                fallbacks: 'default',
+                output_config: { effort: 'medium', format: { type: 'json_schema', schema: PLAN_SCHEMA } },
+                system: SYSTEM_PROMPT,
+                messages: [{ role: 'user', content: buildUserContent(ctx) }]
+            };
+        }
+
+        // Antwort Stück für Stück lesen. feed(text) beliebig oft aufrufen, result() am Ende.
+        function createStreamParser() {
+            const st = { text: '', model: null, input: 0, output: 0, stopReason: null, error: null, fallback: false, chars: 0 };
+            let buf = '';
+            function handle(ev) {
+                if (!ev || typeof ev !== 'object') return;
+                if (ev.type === 'message_start' && ev.message) {
+                    st.model = ev.message.model || st.model;
+                    if (ev.message.usage) st.input = Number(ev.message.usage.input_tokens) || 0;
+                } else if (ev.type === 'content_block_start' && ev.content_block) {
+                    if (ev.content_block.type === 'fallback') {
+                        // Ein anderes Modell übernimmt: bisherigen Text verwerfen
+                        st.fallback = true;
+                        st.text = '';
+                    } else if (ev.content_block.type === 'text' && ev.content_block.text) {
+                        st.text += ev.content_block.text;
+                    }
+                } else if (ev.type === 'content_block_delta' && ev.delta && ev.delta.type === 'text_delta') {
+                    st.text += ev.delta.text || '';
+                } else if (ev.type === 'message_delta') {
+                    if (ev.delta && ev.delta.stop_reason) st.stopReason = ev.delta.stop_reason;
+                    if (ev.usage && ev.usage.output_tokens != null) st.output = Number(ev.usage.output_tokens) || 0;
+                    if (ev.usage && ev.usage.input_tokens) st.input = Number(ev.usage.input_tokens) || st.input;
+                } else if (ev.type === 'error') {
+                    st.error = (ev.error && (ev.error.message || ev.error.type)) || 'Unbekannter Fehler';
+                }
+                st.chars = st.text.length;
+            }
+            return {
+                feed(chunk) {
+                    buf += chunk.replace(/\r\n/g, '\n');
+                    let idx;
+                    while ((idx = buf.indexOf('\n\n')) >= 0) {
+                        const block = buf.slice(0, idx);
+                        buf = buf.slice(idx + 2);
+                        const data = block.split('\n').filter(l => l.startsWith('data:')).map(l => l.slice(5).trim()).join('');
+                        if (!data) continue;
+                        try { handle(JSON.parse(data)); } catch (e) { /* unvollständige Zeile ignorieren */ }
+                    }
+                    return st;
+                },
+                result() { return st; }
+            };
+        }
+
+        function toInt(v, def) {
+            const n = Math.round(Number(v));
+            return isFinite(n) && n >= 0 ? n : def;
+        }
+        function str(v) { return typeof v === 'string' ? v.trim() : ''; }
+
+        // Plan der KI prüfen: jedes Datum genau einmal, fehlende Tage = Ruhetag, Zahlen sinnvoll
+        function normalizePlan(raw, dates) {
+            if (!raw || typeof raw !== 'object' || !Array.isArray(raw.days)) throw new Error('Plan ohne Tage');
+            const byDate = {};
+            raw.days.forEach(d => { if (d && typeof d.date === 'string' && !byDate[d.date]) byDate[d.date] = d; });
+            const days = dates.map(date => {
+                const d = byDate[date];
+                if (!d) return { date, type: 'ruhe', title: 'Ruhetag', durationMin: 0, warmup: '', exercises: [], cooldown: '', notes: '' };
+                const exercises = (Array.isArray(d.exercises) ? d.exercises : []).filter(e => e && str(e.name)).map(e => ({
+                    name: str(e.name),
+                    sets: Math.max(1, toInt(e.sets, 1)),
+                    reps: str(String(e.reps == null ? '' : e.reps)) || '–',
+                    restSec: toInt(e.restSec, 60),
+                    explanation: str(e.explanation),
+                    tracksReps: !!e.tracksReps
+                }));
+                const type = d.type === 'training' && exercises.length > 0 ? 'training' : 'ruhe';
+                return {
+                    date,
+                    type,
+                    title: str(d.title) || (type === 'training' ? 'Training' : 'Ruhetag'),
+                    durationMin: type === 'training' ? toInt(d.durationMin, 0) : 0,
+                    warmup: str(d.warmup),
+                    exercises: type === 'training' ? exercises : [],
+                    cooldown: str(d.cooldown),
+                    notes: str(d.notes)
+                };
+            });
+            if (!days.some(d => d.type === 'training')) throw new Error('Plan ohne Trainingstage');
+            const list = v => (Array.isArray(v) ? v.map(str).filter(Boolean) : []);
+            return {
+                title: str(raw.title) || 'Mein Trainingsplan',
+                summary: str(raw.summary),
+                review: str(raw.review),
+                days,
+                nutritionTips: list(raw.nutritionTips),
+                safetyNotes: list(raw.safetyNotes)
+            };
+        }
+
+        function progressStats(planRec) {
+            const training = planRec && planRec.plan ? planRec.plan.days.filter(d => d.type === 'training') : [];
+            const progress = (planRec && planRec.progress) || {};
+            const doneDays = training.filter(d => progress[d.date] && progress[d.date].done);
+            const diffs = doneDays.map(d => Number(progress[d.date].difficulty)).filter(n => n >= 1 && n <= 4);
+            return {
+                total: training.length,
+                done: doneDays.length,
+                pct: training.length ? Math.round((doneDays.length / training.length) * 100) : 0,
+                avgDifficulty: diffs.length ? diffs.reduce((a, b) => a + b, 0) / diffs.length : null
+            };
+        }
+
+        function isEnded(planRec, todayKey) {
+            return !!(planRec && planRec.dates && todayKey > planRec.dates[planRec.dates.length - 1]);
+        }
+
+        return {
+            MODEL, PRICE_PER_MTOK, DIFFICULTY, FOCUS_OPTIONS, PLAN_SCHEMA, SYSTEM_PROMPT,
+            shift, weekday, periodDates, nextMonday, costUsd, focusLabels, previousPlanDigest,
+            buildUserContent, buildRequestBody, createStreamParser, normalizePlan, progressStats, isEnded
+        };
+    })();
+    /* PLAN-CALC-END */
+
+    /* PLAN: MEIN TRAININGSPLAN (Seite, Speichern, KI-Anfrage)
+       Gespeichert: trainingProfileV2 (Profil), trainingPlansV2 (alle Pläne inkl. Schwerpunkte,
+       Fortschritt, Check-in, KI-Rückblick), aiUsageV2 (bisherige Kosten), aiApiKeyV2 (Schlüssel –
+       NUR auf dem Gerät, nie im Backup). */
+    const API_URL = 'https://api.anthropic.com/v1/messages';
+    const EQUIPMENT_OPTIONS = ['Fitnessstudio', 'Klimmzugstange', 'Kurzhanteln', 'Widerstandsbänder', 'Gymnastikmatte', 'Springseil', 'Draußen laufen', 'Fahrrad / Ergometer'];
+    const GOAL_OPTIONS = ['Abnehmen', 'Kraft', 'Ausdauer'];
+    let planWeeks = 2;
+    let planStart = 'today';
+    let planGenerating = false;
+    let planOpenDay = null;
+    let planCheckinOpen = false;
+    let planProfileEditing = false;
+    const planFocusSel = new Set();
+
+    function readJson(key, fallback) {
+        try {
+            const v = JSON.parse(localStorage.getItem(key));
+            return v === null || v === undefined ? fallback : v;
+        } catch (e) {
+            return fallback;
+        }
+    }
+
+    function getApiKey() { return (localStorage.getItem('aiApiKeyV2') || '').trim(); }
+    function getTrainingProfile() { const p = readJson('trainingProfileV2', null); return p && typeof p === 'object' ? p : null; }
+    function getTrainingPlans() { const a = readJson('trainingPlansV2', []); return Array.isArray(a) ? a : []; }
+    function saveTrainingPlans(list) { localStorage.setItem('trainingPlansV2', JSON.stringify(list)); }
+    function getActivePlan() { const list = getTrainingPlans(); return list.length ? list[list.length - 1] : null; }
+    function getAiUsage() { const u = readJson('aiUsageV2', null); return u && typeof u === 'object' ? u : { totalUsd: 0, calls: 0 }; }
+
+    function addAiUsage(costUsd) {
+        const u = getAiUsage();
+        u.totalUsd = Math.round(((Number(u.totalUsd) || 0) + costUsd) * 10000) / 10000;
+        u.calls = (Number(u.calls) || 0) + 1;
+        localStorage.setItem('aiUsageV2', JSON.stringify(u));
+    }
+
+    function fmtUsd(v) { return `${(Math.round(v * 100) / 100).toFixed(2).replace('.', ',')} $`; }
+    function fmtDay(key) { return `${PlanCalc.weekday(key)} ${formatShortDate(key)}`; }
+
+    function el(tag, cls, text) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text !== undefined && text !== null) e.textContent = text;
+        return e;
+    }
+
+    /* --- KI-Schlüssel --- */
+    function saveApiKey() {
+        const v = document.getElementById('aiKeyInput').value.trim();
+        if (!/^sk-ant-[A-Za-z0-9_\-]{20,}$/.test(v)) {
+            showToast('Das sieht nicht wie ein Anthropic-Schlüssel aus (beginnt mit sk-ant-).');
+            return;
+        }
+        localStorage.setItem('aiApiKeyV2', v);
+        document.getElementById('aiKeyInput').value = '';
+        renderPlanPage();
+        showToast('Schlüssel gespeichert (nur auf diesem Gerät).');
+    }
+
+    function deleteApiKey() {
+        showModal({
+            icon: '🔑', title: 'Schlüssel löschen?', text: 'Der API-Schlüssel wird von diesem Gerät entfernt. Pläne bleiben erhalten.',
+            yes: 'Löschen', no: 'Abbrechen',
+            onYes: () => { localStorage.removeItem('aiApiKeyV2'); renderPlanPage(); showToast('Schlüssel gelöscht.'); }
+        });
+    }
+
+    /* --- Profil --- */
+    function makeToggleChips(containerId, options, selected) {
+        const box = document.getElementById(containerId);
+        box.innerHTML = '';
+        options.forEach(opt => {
+            const b = el('button', 'chip' + (selected.includes(opt) ? ' active' : ''), opt);
+            b.type = 'button';
+            b.dataset.value = opt;
+            b.onclick = () => b.classList.toggle('active');
+            box.appendChild(b);
+        });
+    }
+
+    function chipValues(containerId) {
+        return Array.from(document.querySelectorAll(`#${containerId} .chip.active`)).map(b => b.dataset.value);
+    }
+
+    function fillProfileForm() {
+        const p = getTrainingProfile() || {};
+        const dobAge = calculateAgeFromDob(localStorage.getItem('userDobV2') || '');
+        document.getElementById('tpAge').value = p.age || (dobAge !== null ? dobAge : '');
+        document.getElementById('tpHeight').value = p.heightCm || '';
+        const sum = getWeightSummary();
+        const wField = document.getElementById('tpWeight');
+        if (sum.hasData) {
+            wField.value = `Ø ${String(WeightCalc.round1(sum.avg7)).replace('.', ',')} (aus deinen Wiegedaten)`;
+            wField.disabled = true;
+        } else {
+            wField.value = '';
+            wField.disabled = false;
+        }
+        const g = getGoalWeight();
+        document.getElementById('tpGoal').value = !isNaN(g) ? String(g).replace('.', ',') : '';
+        if (p.level) document.getElementById('tpLevel').value = p.level;
+        document.getElementById('tpExperience').value = p.experience || '';
+        makeToggleChips('tpEquip', EQUIPMENT_OPTIONS, p.equipment || []);
+        document.getElementById('tpEquipOther').value = p.equipmentOther || '';
+        document.getElementById('tpDays').value = String(p.daysPerWeek || 3);
+        document.getElementById('tpMinutes').value = p.minutesPerSession || '';
+        makeToggleChips('tpGoals', GOAL_OPTIONS, p.goals || []);
+        document.getElementById('tpLimits').value = p.limitations || '';
+    }
+
+    function saveTrainingProfile() {
+        const num = id => parseDecimal(document.getElementById(id).value);
+        const age = Math.round(num('tpAge'));
+        const height = Math.round(num('tpHeight'));
+        const minutes = Math.round(num('tpMinutes'));
+        if (!(age >= 14 && age <= 100)) { showToast('Bitte Alter eingeben (14–100).'); return; }
+        if (!(height >= 120 && height <= 230)) { showToast('Bitte Größe in cm eingeben (120–230).'); return; }
+        if (!(minutes >= 10 && minutes <= 240)) { showToast('Bitte Minuten pro Einheit eingeben (10–240).'); return; }
+        const goals = chipValues('tpGoals');
+        if (goals.length === 0) { showToast('Bitte mindestens ein Ziel wählen.'); return; }
+
+        const wField = document.getElementById('tpWeight');
+        if (!wField.disabled && wField.value.trim() !== '') {
+            const w = parseDecimal(wField.value);
+            if (isNaN(w) || w < 35 || w > 350) { showToast('Bitte gültiges Gewicht eingeben (35–350 kg).'); return; }
+            setDailyWeight(getLocalDateKey(), WeightCalc.round1(w));
+        }
+        const goalRaw = document.getElementById('tpGoal').value.trim();
+        if (goalRaw !== '') {
+            const g = parseDecimal(goalRaw);
+            if (isNaN(g) || g < 35 || g > 250) { showToast('Zielgewicht bitte zwischen 35 und 250 kg.'); return; }
+            if (localStorage.getItem('userGoalWeightV2') !== g.toFixed(1)) {
+                localStorage.setItem('userGoalWeightV2', g.toFixed(1));
+                resetMilestoneState();
+            }
+        }
+
+        const profile = {
+            age, heightCm: height,
+            level: document.getElementById('tpLevel').value,
+            experience: document.getElementById('tpExperience').value.trim().slice(0, 500),
+            equipment: chipValues('tpEquip'),
+            equipmentOther: document.getElementById('tpEquipOther').value.trim().slice(0, 200),
+            daysPerWeek: Number(document.getElementById('tpDays').value) || 3,
+            minutesPerSession: minutes,
+            goals,
+            limitations: document.getElementById('tpLimits').value.trim().slice(0, 500),
+            updatedAt: getLocalDateKey()
+        };
+        localStorage.setItem('trainingProfileV2', JSON.stringify(profile));
+        planProfileEditing = false;
+        renderPlanPage();
+        renderWeightPage();
+        renderOverview();
+        showToast('Trainingsprofil gespeichert.');
+    }
+
+    function editTrainingProfile() {
+        planProfileEditing = true;
+        renderPlanPage();
+        document.getElementById('planProfileCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderProfileSummary(p) {
+        const box = document.getElementById('tpSummary');
+        box.innerHTML = '';
+        const lines = [
+            `${p.age} Jahre · ${p.heightCm} cm · ${p.level}`,
+            `${p.daysPerWeek}× pro Woche à ${p.minutesPerSession} Min. · Ziele: ${p.goals.join(', ')}`,
+            `Geräte: ${[...(p.equipment || []), ...(p.equipmentOther ? [p.equipmentOther] : [])].join(', ') || 'keine'}`
+        ];
+        if (p.limitations) lines.push(`Einschränkungen: ${p.limitations}`);
+        lines.forEach(l => box.appendChild(el('p', 'muted', l)));
+        box.querySelectorAll('p').forEach(x => { x.style.margin = '0 0 4px 0'; x.style.fontSize = '0.85rem'; });
+        const b = el('button', 'btn-secondary', 'Profil bearbeiten');
+        b.type = 'button';
+        b.onclick = editTrainingProfile;
+        box.appendChild(b);
+    }
+
+    /* --- Schwerpunkte & Start --- */
+    function renderFocusChips() {
+        const box = document.getElementById('planFocusChips');
+        box.innerHTML = '';
+        PlanCalc.FOCUS_OPTIONS.forEach(([key, label]) => {
+            const b = el('button', 'chip' + (planFocusSel.has(key) ? ' active' : ''), label);
+            b.type = 'button';
+            b.dataset.focus = key;
+            b.onclick = () => {
+                if (planFocusSel.has(key)) planFocusSel.delete(key); else planFocusSel.add(key);
+                b.classList.toggle('active', planFocusSel.has(key));
+            };
+            box.appendChild(b);
+        });
+    }
+
+    function getPlanStartKey() {
+        const today = getLocalDateKey();
+        if (planStart === 'tomorrow') return shiftDateKey(today, 1);
+        if (planStart === 'monday') return PlanCalc.nextMonday(today);
+        return today;
+    }
+
+    function renderStartChips() {
+        const box = document.getElementById('planStartChips');
+        box.innerHTML = '';
+        const today = getLocalDateKey();
+        [['today', `Heute (${formatShortDate(today)})`], ['tomorrow', `Morgen (${formatShortDate(shiftDateKey(today, 1))})`], ['monday', `Nächster Montag (${formatShortDate(PlanCalc.nextMonday(today))})`]].forEach(([k, label]) => {
+            const b = el('button', 'chip' + (planStart === k ? ' active' : ''), label);
+            b.type = 'button';
+            b.dataset.start = k;
+            b.onclick = () => { planStart = k; renderStartChips(); };
+            box.appendChild(b);
+        });
+    }
+
+    function setPlanWeeks(n) {
+        planWeeks = n === 1 ? 1 : 2;
+        document.querySelectorAll('#planWeeksChips .chip').forEach(c => c.classList.toggle('active', Number(c.dataset.weeks) === planWeeks));
+        updatePlanCostHint();
+    }
+
+    function updatePlanCostHint() {
+        document.getElementById('planCostHint').textContent = planWeeks === 2
+            ? 'Kosten ca. 0,20–0,35 $ (Claude Opus 5.5). Dauer: meist 1–3 Minuten.'
+            : 'Kosten ca. 0,10–0,20 $ (Claude Opus 5.5). Dauer: meist 1–2 Minuten.';
+    }
+
+    /* --- Daten für die KI --- */
+    function getActivityDigest() {
+        const today = getLocalDateKey();
+        let stepsSum = 0;
+        let stepsDays = 0;
+        for (let i = 0; i < 7; i++) {
+            const v = getStepsForDate(shiftDateKey(today, -i));
+            if (v > 0) { stepsSum += v; stepsDays++; }
+        }
+        const from = shiftDateKey(today, -13);
+        const inRange = obj => Object.keys(obj).filter(d => d >= from && d <= today).length;
+        return {
+            schritteSchnitt7Tage: stepsDays ? Math.round(stepsSum / stepsDays) : null,
+            laeufe: getRuns().filter(r => r.date >= from).map(r => ({ datum: r.date, km: r.distanceKm, pace: formatPace(r.distanceKm, r.durationMin) })),
+            krafttrainingTage: inRange(getGymStrengthWorkouts()),
+            cardioTage: inRange(getGymCardioWorkouts()),
+            bodyweightTage: inRange(getBwWorkouts())
+        };
+    }
+
+    function getNutritionGoalsDigest() {
+        const goals = getNutritionGoals();
+        const out = {};
+        NUTRIENTS.forEach(n => {
+            const g = goals[n.key];
+            if (g.value !== null) out[n.label] = `${g.mode === 'max' ? 'höchstens' : 'mindestens'} ${g.value} ${n.unit}`;
+        });
+        return Object.keys(out).length ? out : null;
+    }
+
+    /* --- Anfrage an Claude --- */
+    function apiErrorText(status, msg) {
+        const m = String(msg || '');
+        if (status === 401) return 'Der API-Schlüssel ist ungültig. Bitte prüfen oder neu eingeben.';
+        if (status === 403) return 'Dieser Schlüssel hat keinen Zugriff. Bitte in der Anthropic-Konsole prüfen.';
+        if (/credit|balance|billing/i.test(m)) return 'Zu wenig Guthaben bei Anthropic. Bitte in der Konsole aufladen.';
+        if (status === 429) return 'Zu viele Anfragen oder Ausgabenlimit erreicht. Bitte später erneut versuchen.';
+        if (status === 529 || /overload/i.test(m)) return 'Die KI ist gerade überlastet. Bitte in ein paar Minuten nochmal versuchen.';
+        if (status >= 500) return `Störung bei Anthropic (Code ${status}). Bitte später erneut versuchen.`;
+        return `Die KI hat die Anfrage nicht angenommen (Code ${status})${m ? ': ' + m : ''}.`;
+    }
+
+    async function callClaude(body, onProgress) {
+        const key = getApiKey();
+        if (!key) throw new Error('Bitte zuerst den API-Schlüssel eingeben (unten auf dieser Seite).');
+        const send = b => {
+            const headers = {
+                'content-type': 'application/json',
+                'x-api-key': key,
+                'anthropic-version': '2026-10-21',
+                'anthropic-dangerous-direct-browser-access': 'true'
+            };
+            if (b.fallbacks) headers['anthropic-beta'] = 'server-side-fallback-2026-07-01';
+            return fetch(API_URL, { method: 'POST', headers, body: JSON.stringify(b) });
+        };
+        let res;
+        try {
+            res = await send(body);
+            if (res.status === 400 && body.fallbacks) {
+                const t = await res.clone().text();
+                if (/fallback/i.test(t)) { // Ersatzmodell-Funktion nicht verfügbar → ohne sie erneut
+                    const b2 = Object.assign({}, body);
+                    delete b2.fallbacks;
+                    res = await send(b2);
+                }
+            }
+        } catch (e) {
+            throw new Error('Keine Verbindung zur KI. Bitte Internet prüfen.');
+        }
+        if (!res.ok) {
+            let msg = '';
+            try { const j = await res.json(); msg = j && j.error ? j.error.message : ''; } catch (e) {}
+            throw new Error(apiErrorText(res.status, msg));
+        }
+        const parser = PlanCalc.createStreamParser();
+        try {
+            if (res.body && res.body.getReader) {
+                const reader = res.body.getReader();
+                const dec = new TextDecoder();
+                for (;;) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const st = parser.feed(dec.decode(value, { stream: true }));
+                    if (onProgress) onProgress(st);
+                }
+            } else {
+                parser.feed(await res.text());
+            }
+        } catch (e) {
+            throw new Error('Die Verbindung ist abgebrochen. Bitte erneut versuchen.');
+        }
+        const r = parser.result();
+        const cost = PlanCalc.costUsd({ input: r.input, output: r.output });
+        if (r.input || r.output) addAiUsage(cost);
+        r.costUsd = cost;
+        if (r.error) throw new Error(apiErrorText(/overload/i.test(r.error) ? 529 : 500, r.error));
+        if (r.stopReason === 'refusal') throw new Error('Die KI hat die Anfrage abgelehnt. Bitte Wünsche oder Einschränkungen anders formulieren.');
+        if (r.stopReason === 'max_tokens') throw new Error('Der Plan wurde zu lang. Bitte „1 Woche“ wählen oder erneut versuchen.');
+        return r;
+    }
+
+    async function createTrainingPlan() {
+        if (planGenerating) return;
+        const profile = getTrainingProfile();
+        if (!profile) { showToast('Bitte zuerst dein Trainingsprofil ausfüllen.'); return; }
+        if (!getApiKey()) { showToast('Bitte zuerst den API-Schlüssel eingeben.'); return; }
+        const prev = getActivePlan();
+        if (prev && !prev.checkin) { showToast('Bitte zuerst den Check-in zum aktuellen Plan machen.'); return; }
+
+        const startKey = getPlanStartKey();
+        const dates = PlanCalc.periodDates(startKey, planWeeks);
+        const focus = { options: Array.from(planFocusSel), text: document.getElementById('planFocusText').value.trim().slice(0, 500) };
+        const body = PlanCalc.buildRequestBody({
+            profile, weight: getWeightCheckinData(), weeks: planWeeks, dates, focus,
+            previousPlan: prev, checkin: prev ? prev.checkin : null,
+            nutritionGoals: getNutritionGoalsDigest(), activity: getActivityDigest()
+        });
+
+        const btn = document.getElementById('planCreateBtn');
+        const status = document.getElementById('planGenStatus');
+        planGenerating = true;
+        btn.disabled = true;
+        btn.textContent = 'KI arbeitet …';
+        status.style.display = '';
+        status.textContent = 'Anfrage wird gesendet … (das dauert meist 1–3 Minuten, App bitte offen lassen)';
+        try {
+            const r = await callClaude(body, st => {
+                status.textContent = st.chars > 0
+                    ? `KI schreibt deinen Plan … (${formatInt(st.chars)} Zeichen)`
+                    : 'KI denkt nach … (App bitte offen lassen)';
+            });
+            let raw;
+            try { raw = JSON.parse(r.text); } catch (e) { throw new Error('Die Antwort der KI war unvollständig. Bitte erneut versuchen.'); }
+            let plan;
+            try { plan = PlanCalc.normalizePlan(raw, dates); } catch (e) { throw new Error('Der Plan der KI war unbrauchbar. Bitte erneut versuchen.'); }
+            const rec = {
+                id: `plan_${Date.now()}`,
+                createdAt: new Date().toISOString(),
+                startDate: startKey,
+                weeks: planWeeks,
+                dates,
+                focus,
+                plan,
+                progress: {},
+                checkin: null,
+                model: r.model || PlanCalc.MODEL,
+                usage: { input: r.input, output: r.output },
+                costUsd: Math.round(r.costUsd * 10000) / 10000
+            };
+            const list = getTrainingPlans();
+            list.push(rec);
+            saveTrainingPlans(list);
+            planFocusSel.clear();
+            document.getElementById('planFocusText').value = '';
+            planOpenDay = null;
+            status.style.display = 'none';
+            renderPlanPage();
+            renderOverview();
+            window.scrollTo(0, 0);
+            showToast(`Plan erstellt (Kosten ca. ${fmtUsd(rec.costUsd)}).`);
+        } catch (e) {
+            status.textContent = '⚠️ ' + e.message;
+            renderAiKeyCard();
+        } finally {
+            planGenerating = false;
+            btn.disabled = false;
+            btn.textContent = 'Plan von der KI erstellen lassen';
+        }
+    }
+
+    /* --- Abhaken --- */
+    function savePlanDayDone(date) {
+        const list = getTrainingPlans();
+        const rec = list[list.length - 1];
+        if (!rec) return;
+        const day = rec.plan.days.find(d => d.date === date);
+        const box = document.getElementById(`pdDone_${date}`);
+        const diffBtn = box.querySelector('.chip.active[data-diff]');
+        if (!diffBtn) { showToast('Bitte angeben, wie schwer es war.'); return; }
+        const reps = {};
+        day.exercises.forEach((ex, i) => {
+            const f = box.querySelector(`[data-reps="${i}"]`);
+            if (f && f.value.trim()) reps[i] = f.value.trim().slice(0, 60);
+        });
+        rec.progress = rec.progress || {};
+        rec.progress[date] = {
+            done: true,
+            difficulty: Number(diffBtn.dataset.diff),
+            reps,
+            note: box.querySelector('[data-note]').value.trim().slice(0, 300),
+            doneOn: getLocalDateKey()
+        };
+        saveTrainingPlans(list);
+        const today = getLocalDateKey();
+        markDateActive(date <= today ? date : today);
+        renderPlanPage();
+        renderOverview();
+        showToast('Einheit erledigt – stark! 💪');
+    }
+
+    function resetPlanDay(date) {
+        const list = getTrainingPlans();
+        const rec = list[list.length - 1];
+        if (!rec || !rec.progress) return;
+        const was = rec.progress[date];
+        delete rec.progress[date];
+        saveTrainingPlans(list);
+        if (was) unmarkDateIfEmptyPlan(was.doneOn && was.doneOn < date ? was.doneOn : date);
+        planOpenDay = date;
+        renderPlanPage();
+        renderOverview();
+    }
+
+    function unmarkDateIfEmptyPlan(dateKey) { unmarkDateIfEmpty(dateKey); }
+
+    // Hat der Tag eine erledigte Plan-Einheit? (zählt als aktiver Tag)
+    function planDoneOnDate(dateKey) {
+        return getTrainingPlans().some(rec => Object.keys(rec.progress || {}).some(d => {
+            const p = rec.progress[d];
+            return p && p.done && ((d <= (p.doneOn || d) ? d : p.doneOn) === dateKey);
+        }));
+    }
+
+    function openPlanToday() {
+        planOpenDay = getLocalDateKey();
+        switchTab('plan');
+        const t = document.getElementById(`pd_${planOpenDay}`);
+        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /* --- Check-in --- */
+    function openCheckin() {
+        planCheckinOpen = true;
+        renderPlanPage();
+        document.getElementById('planCheckinCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function saveCheckin() {
+        const list = getTrainingPlans();
+        const rec = list[list.length - 1];
+        if (!rec) return;
+        const how = document.getElementById('checkinHow').value.trim();
+        if (!how) { showToast('Bitte kurz schreiben, wie es lief.'); return; }
+        rec.checkin = {
+            date: getLocalDateKey(),
+            howItWent: how.slice(0, 800),
+            tooEasy: document.getElementById('checkinEasy').value.trim().slice(0, 500),
+            tooHard: document.getElementById('checkinHard').value.trim().slice(0, 500),
+            weight: getWeightCheckinData(),
+            stats: PlanCalc.progressStats(rec)
+        };
+        saveTrainingPlans(list);
+        ['checkinHow', 'checkinEasy', 'checkinHard'].forEach(id => { document.getElementById(id).value = ''; });
+        planCheckinOpen = false;
+        renderPlanPage();
+        document.getElementById('planNewCard').scrollIntoView({ behavior: 'smooth' });
+        showToast('Check-in gespeichert. Jetzt Schwerpunkte wählen.');
+    }
+
+    /* --- Anzeige --- */
+    function renderAiKeyCard() {
+        const key = getApiKey();
+        const status = document.getElementById('aiKeyStatus');
+        status.textContent = key ? `✓ Schlüssel gespeichert (…${key.slice(-4)})` : 'Noch kein Schlüssel eingegeben.';
+        status.style.color = key ? '#3ddc84' : '#ffb48f';
+        document.getElementById('aiKeyForm').style.display = key ? 'none' : '';
+        document.getElementById('aiKeyDeleteBtn').style.display = key ? '' : 'none';
+        const u = getAiUsage();
+        document.getElementById('aiUsageInfo').textContent = u.calls > 0 ? `Bisher ca. ${fmtUsd(u.totalUsd)} in ${u.calls} ${u.calls === 1 ? 'Anfrage' : 'Anfragen'}.` : '';
+    }
+
+    function renderPlanDay(rec, day, editable) {
+        const today = getLocalDateKey();
+        const prog = (rec.progress || {})[day.date];
+        const wrap = el('div', 'plan-day' + (day.date === today ? ' today' : '') + (day.type === 'ruhe' ? ' rest' : ''));
+        wrap.id = `pd_${day.date}`;
+        const head = el('button', 'plan-day-head');
+        head.type = 'button';
+        head.append(
+            el('span', 'pd-date', fmtDay(day.date)),
+            el('span', 'pd-title', day.type === 'ruhe' ? `😌 ${day.title}` : `${day.title}${day.durationMin ? ` · ${day.durationMin} Min.` : ''}`),
+            el('span', 'pd-status' + (prog && prog.done ? ' done' : ''), prog && prog.done ? '✓' : (day.date === today ? '●' : ''))
+        );
+        const open = planOpenDay === day.date;
+        head.onclick = () => { planOpenDay = open ? '' : day.date; renderPlanPage(); };
+        wrap.appendChild(head);
+        if (!open) return wrap;
+
+        const body = el('div', 'plan-day-body');
+        if (day.notes) body.appendChild(el('p', 'muted', day.notes));
+        if (day.warmup) { body.appendChild(el('div', 'plan-sub', 'Aufwärmen')); body.appendChild(el('div', '', day.warmup)); }
+        if (day.exercises.length) body.appendChild(el('div', 'plan-sub', 'Übungen'));
+        day.exercises.forEach(ex => {
+            const e = el('div', 'plan-ex');
+            e.append(el('div', 'plan-ex-name', ex.name), el('div', 'plan-ex-meta', `${ex.sets} × ${ex.reps}${ex.restSec ? ` · Pause ${ex.restSec} Sek.` : ''}`));
+            if (ex.explanation) e.appendChild(el('div', 'plan-ex-expl', ex.explanation));
+            body.appendChild(e);
+        });
+        if (day.cooldown) { body.appendChild(el('div', 'plan-sub', 'Abschluss')); body.appendChild(el('div', '', day.cooldown)); }
+
+        if (day.type === 'training') {
+            const box = el('div', 'plan-done-box');
+            box.id = `pdDone_${day.date}`;
+            if (prog && prog.done) {
+                box.appendChild(el('div', 'goal-mark ok', `✓ Erledigt – ${PlanCalc.DIFFICULTY[prog.difficulty] || ''}`));
+                day.exercises.forEach((ex, i) => { if (prog.reps && prog.reps[i]) box.appendChild(el('div', 'muted', `${ex.name}: ${prog.reps[i]}`)); });
+                if (prog.note) box.appendChild(el('div', 'muted', `Notiz: ${prog.note}`));
+                if (editable) {
+                    const b = el('button', 'btn-secondary', 'Zurücksetzen');
+                    b.type = 'button';
+                    b.style.marginTop = '8px';
+                    b.onclick = () => resetPlanDay(day.date);
+                    box.appendChild(b);
+                }
+            } else if (editable) {
+                box.appendChild(el('div', 'plan-sub', 'Erledigt? Wie schwer war es?'));
+                const chips = el('div', 'chip-row');
+                chips.style.flexWrap = 'wrap';
+                Object.keys(PlanCalc.DIFFICULTY).forEach(k => {
+                    const c = el('button', 'chip', PlanCalc.DIFFICULTY[k]);
+                    c.type = 'button';
+                    c.dataset.diff = k;
+                    c.onclick = () => chips.querySelectorAll('.chip').forEach(x => x.classList.toggle('active', x === c));
+                    chips.appendChild(c);
+                });
+                box.appendChild(chips);
+                day.exercises.forEach((ex, i) => {
+                    if (!ex.tracksReps) return;
+                    const lab = el('label', 'field-label', `${ex.name}: geschaffte Wiederholungen (optional)`);
+                    const inp = el('input');
+                    inp.type = 'text';
+                    inp.placeholder = 'z. B. 8, 7, 6';
+                    inp.dataset.reps = String(i);
+                    box.append(lab, inp);
+                });
+                const note = el('input');
+                note.type = 'text';
+                note.placeholder = 'Notiz (optional)';
+                note.dataset.note = '1';
+                box.appendChild(note);
+                const b = el('button', '', 'Als erledigt speichern');
+                b.type = 'button';
+                b.onclick = () => savePlanDayDone(day.date);
+                box.appendChild(b);
+            }
+            body.appendChild(box);
+        }
+        wrap.appendChild(body);
+        return wrap;
+    }
+
+    function renderPlanDetails(container, rec, editable) {
+        const p = rec.plan;
+        const st = PlanCalc.progressStats(rec);
+        container.appendChild(el('h2', '', p.title));
+        const focus = PlanCalc.focusLabels(rec.focus);
+        container.appendChild(el('p', 'muted', `${fmtDay(rec.dates[0])} – ${fmtDay(rec.dates[rec.dates.length - 1])} · ${rec.weeks === 2 ? '2 Wochen' : '1 Woche'}${focus.length ? ' · ' + focus.join(', ') : ''}`));
+        if (rec.focus && rec.focus.text) container.appendChild(el('p', 'muted', `Wünsche: ${rec.focus.text}`));
+        if (p.review) {
+            const r = el('p', 'weight-hint ideal', `🗒️ KI-Rückblick: ${p.review}`);
+            container.appendChild(r);
+        }
+        if (p.summary) container.appendChild(el('p', '', p.summary));
+        container.appendChild(el('p', 'muted', `${st.done} von ${st.total} Einheiten erledigt`));
+        const track = el('div', 'progress-track');
+        const fill = el('div', 'progress-fill');
+        fill.style.width = `${st.pct}%`;
+        track.appendChild(fill);
+        container.appendChild(track);
+        p.days.forEach(d => container.appendChild(renderPlanDay(rec, d, editable)));
+        if (p.nutritionTips.length) {
+            container.appendChild(el('div', 'plan-sub', 'Ernährungstipps'));
+            const ul = el('ul');
+            p.nutritionTips.forEach(t => ul.appendChild(el('li', '', t)));
+            container.appendChild(ul);
+        }
+        if (p.safetyNotes.length) {
+            container.appendChild(el('div', 'plan-sub', 'Hinweise'));
+            const ul = el('ul');
+            p.safetyNotes.forEach(t => ul.appendChild(el('li', '', t)));
+            container.appendChild(ul);
+        }
+    }
+
+    function renderPlanHistory() {
+        const list = getTrainingPlans();
+        const card = document.getElementById('planHistoryCard');
+        const box = document.getElementById('planHistory');
+        box.innerHTML = '';
+        const old = list.filter(rec => rec.checkin).slice().reverse();
+        card.style.display = old.length ? '' : 'none';
+        old.forEach(rec => {
+            const st = PlanCalc.progressStats(rec);
+            const item = el('div', 'plan-day');
+            const head = el('button', 'plan-day-head');
+            head.type = 'button';
+            head.append(el('span', 'pd-date', `${formatShortDate(rec.dates[0])}–${formatShortDate(rec.dates[rec.dates.length - 1])}`), el('span', 'pd-title', rec.plan.title), el('span', 'pd-status done', `${st.done}/${st.total}`));
+            const body = el('div', 'plan-day-body');
+            body.style.display = 'none';
+            head.onclick = () => { body.style.display = body.style.display === 'none' ? '' : 'none'; };
+            const focus = PlanCalc.focusLabels(rec.focus);
+            body.appendChild(el('p', 'muted', `Schwerpunkte: ${focus.length ? focus.join(', ') : '–'}${rec.focus && rec.focus.text ? ' · Wünsche: ' + rec.focus.text : ''}`));
+            const c = rec.checkin;
+            body.appendChild(el('div', 'plan-sub', `Check-in (${formatShortDate(c.date)})`));
+            body.appendChild(el('div', '', `Wie lief es: ${c.howItWent}`));
+            if (c.tooEasy) body.appendChild(el('div', '', `Zu leicht: ${c.tooEasy}`));
+            if (c.tooHard) body.appendChild(el('div', '', `Zu schwer: ${c.tooHard}`));
+            if (c.weight && c.weight.hasData) body.appendChild(el('div', 'muted', `Gewicht: Ø ${String(c.weight.avg7Kg).replace('.', ',')} kg, Trend ${c.weight.trend}`));
+            if (rec.costUsd) body.appendChild(el('div', 'muted', `Kosten des Plans: ca. ${fmtUsd(rec.costUsd)}`));
+            const details = el('div');
+            renderPlanDetails(details, rec, false);
+            body.appendChild(details);
+            item.append(head, body);
+            box.appendChild(item);
+        });
+    }
+
+    function renderPlanPage() {
+        renderAiKeyCard();
+        const profile = getTrainingProfile();
+        const rec = getActivePlan();
+        const today = getLocalDateKey();
+
+        // Profil: Formular oder Zusammenfassung
+        const editing = !profile || planProfileEditing;
+        document.getElementById('tpForm').style.display = editing ? '' : 'none';
+        if (editing) {
+            if (!document.getElementById('tpForm').contains(document.activeElement)) fillProfileForm();
+            document.getElementById('tpSummary').innerHTML = profile ? '' : '<p class="muted" style="margin-top:0;font-size:0.85rem;">Wird nur auf diesem Handy gespeichert. Daraus erstellt die KI deinen Plan.</p>';
+        } else {
+            renderProfileSummary(profile);
+        }
+
+        // Aktueller Plan
+        const curCard = document.getElementById('planCurrentCard');
+        const cur = document.getElementById('planCurrent');
+        cur.innerHTML = '';
+        const activeOpen = rec && !rec.checkin;
+        curCard.style.display = activeOpen ? '' : 'none';
+        if (activeOpen) {
+            if (planOpenDay === null) {
+                planOpenDay = rec.dates.includes(today) ? today : (rec.plan.days.find(d => d.type === 'training' && !(rec.progress || {})[d.date]) || {}).date || '';
+            }
+            const ended = PlanCalc.isEnded(rec, today);
+            if (ended) {
+                const banner = el('p', 'weight-hint fast', '⏰ Der Zeitraum ist vorbei – Zeit für deinen Check-in!');
+                cur.appendChild(banner);
+            }
+            renderPlanDetails(cur, rec, true);
+            const b = el('button', ended ? '' : 'btn-secondary', ended ? 'Check-in starten' : 'Check-in vorzeitig machen');
+            b.type = 'button';
+            b.style.marginTop = '12px';
+            b.onclick = openCheckin;
+            cur.appendChild(b);
+        }
+
+        // Check-in
+        const showCheckin = activeOpen && (planCheckinOpen || PlanCalc.isEnded(rec, today));
+        document.getElementById('planCheckinCard').style.display = showCheckin ? '' : 'none';
+        if (showCheckin) {
+            const w = getWeightCheckinData();
+            const sum = getWeightSummary();
+            document.getElementById('checkinWeightInfo').textContent = w.hasData
+                ? `Ø ${String(w.avg7Kg).replace('.', ',')} kg${w.changeVsPrevWeekKg !== null ? ` · ${fmtChange(w.changeVsPrevWeekKg)} zur Vorwoche` : ''} · Trend: ${w.trend}`
+                : 'Noch keine Gewichtswerte.';
+            document.getElementById('checkinWeightRow').style.display = sum.hasData && sum.todayValue !== null ? 'none' : '';
+        }
+
+        // Neuer Plan
+        const newCard = document.getElementById('planNewCard');
+        const showNew = !rec || !!rec.checkin;
+        newCard.style.display = showNew ? '' : 'none';
+        if (showNew) {
+            document.getElementById('planNewTitle').textContent = rec ? 'Nächster Plan: Schwerpunkte wählen' : 'Ersten Plan erstellen';
+            renderFocusChips();
+            renderStartChips();
+            setPlanWeeks(planWeeks);
+            const btn = document.getElementById('planCreateBtn');
+            if (!planGenerating) btn.disabled = !profile || !getApiKey();
+            const status = document.getElementById('planGenStatus');
+            if (!planGenerating && (!profile || !getApiKey())) {
+                status.style.display = '';
+                status.textContent = !profile ? 'Erst unten das Trainingsprofil ausfüllen.' : 'Erst unten den API-Schlüssel eingeben.';
+            } else if (!planGenerating && status.textContent.startsWith('Erst')) {
+                status.style.display = 'none';
+            }
+        }
+
+        renderPlanHistory();
+    }
+
+    function renderOverviewPlan() {
+        const card = document.getElementById('ovPlanCard');
+        const rec = getActivePlan();
+        const today = getLocalDateKey();
+        const day = rec && !rec.checkin ? rec.plan.days.find(d => d.date === today) : null;
+        if (!rec || rec.checkin) {
+            card.style.display = 'none';
+            return;
+        }
+        card.style.display = '';
+        const text = document.getElementById('ovPlanText');
+        const sub = document.getElementById('ovPlanSub');
+        if (PlanCalc.isEnded(rec, today)) {
+            text.textContent = 'Dein Plan ist abgelaufen.';
+            sub.textContent = 'Zeit für den Check-in – dann erstellt die KI den nächsten Plan.';
+        } else if (!day) {
+            text.textContent = 'Dein Plan startet bald.';
+            sub.textContent = `Start: ${fmtDay(rec.dates[0])}`;
+        } else if (day.type === 'ruhe') {
+            text.textContent = `😌 ${day.title}`;
+            sub.textContent = day.notes || 'Heute ist Erholung angesagt.';
+        } else {
+            const prog = (rec.progress || {})[today];
+            text.textContent = `${prog && prog.done ? '✓ ' : ''}${day.title}${day.durationMin ? ` · ${day.durationMin} Min.` : ''}`;
+            sub.textContent = prog && prog.done ? 'Schon erledigt – stark!' : `${day.exercises.length} Übungen`;
+        }
+    }
+
+
     /* Backup Export & Import */
     function exportBackup() {
         flushPendingLiveSteps();
@@ -6487,6 +7721,9 @@
             userGoalWeightV2: localStorage.getItem('userGoalWeightV2'),
             bodyMetricsLogV2: getBodyMetricsLog(),
             weightMilestonesV2: getMilestoneState(),
+            trainingProfileV2: getTrainingProfile(),
+            trainingPlansV2: getTrainingPlans(),
+            aiUsageV2: getAiUsage(),
             personalWhyV2: localStorage.getItem('personalWhyV2')
         };
         const fileName = `fitness_backup_${getLocalDateKey()}.json`;
@@ -6529,6 +7766,9 @@
         ['userGoalWeightV2', 'string'],
         ['bodyMetricsLogV2', 'array'],
         ['weightMilestonesV2', 'object'],
+        ['trainingProfileV2', 'object'],
+        ['trainingPlansV2', 'array'],
+        ['aiUsageV2', 'object'],
         ['personalWhyV2', 'string']
     ];
 
@@ -6737,6 +7977,7 @@
         renderMotivation();
         renderProfile();
         renderWeightPage();
+        renderPlanPage();
         renderOverview();
         showAppUpdateCard();
     }
