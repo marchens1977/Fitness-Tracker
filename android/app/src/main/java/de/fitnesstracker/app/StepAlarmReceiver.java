@@ -37,6 +37,7 @@ public class StepAlarmReceiver extends BroadcastReceiver {
         if (!ACTION_READ.equals(action) && !Intent.ACTION_BOOT_COMPLETED.equals(action)) return;
         StepJobService.schedule(context);
         scheduleNext(context);
+        ReminderReceiver.scheduleAll(context); // Erinnerungen nach Neustart wieder einplanen
         PendingResult result = goAsync();
         StepReader.readOnce(context, result::finish);
     }

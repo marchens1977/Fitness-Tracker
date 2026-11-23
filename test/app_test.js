@@ -46,7 +46,7 @@ function pruefe(ok, was) {
     await page.click('#subNav .chip[data-tab="running"]');
     pruefe(await page.locator('#tab-running').evaluate(e => e.classList.contains('active')), 'Unter-Knopf „Laufen“ funktioniert');
     await page.click('.bottom-nav [data-group="fortschritt"]');
-    pruefe((await page.locator('#subNav .chip').allInnerTexts()).join('|') === 'Motivation|Gewicht|Statistik', 'Unter-Knöpfe Fortschritt richtig');
+    pruefe((await page.locator('#subNav .chip').allInnerTexts()).join('|') === 'Motivation|Bestwerte|Gewicht|Statistik', 'Unter-Knöpfe Fortschritt richtig');
     await page.click('.bottom-nav [data-group="training"]');
     pruefe(await page.locator('#tab-running').evaluate(e => e.classList.contains('active')), 'Bereich merkt sich zuletzt gewählte Unterseite');
 

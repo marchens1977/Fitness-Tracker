@@ -66,6 +66,20 @@ pruefe("public String getVersion()" in main and "public void checkUpdate()" in m
 pruefe('id="appUpdateCard"' in html and "Nach Updates suchen" in html and "window.AndroidApp.checkUpdate()" in html,
        "Webseite: Knopf „Nach Updates suchen“ im Profil ruft die App")
 
+print("Erinnerungen (Android):")
+reminder = (PKG / "ReminderReceiver.java").read_text(encoding="utf-8")
+pruefe("android.permission.POST_NOTIFICATIONS" in manifest, "Erlaubnis für Benachrichtigungen im Manifest")
+pruefe('android:name=".ReminderReceiver"' in manifest, "Erinnerungs-Empfänger angemeldet")
+pruefe("SCHEDULE_EXACT_ALARM" not in manifest and "USE_EXACT_ALARM" not in manifest and "setExact" not in reminder,
+       "Keine Sonder-Erlaubnis für exakte Wecker (ungefähre Uhrzeit reicht)")
+pruefe("ReminderReceiver.scheduleAll" in (PKG / "StepAlarmReceiver.java").read_text(encoding="utf-8"),
+       "Nach Handy-Neustart werden Erinnerungen neu eingeplant")
+pruefe("public String setReminders(String json)" in main and "openNotificationSettings" in main,
+       "App bietet der Webseite setReminders() und Einstellungen an")
+pruefe("window.AndroidApp.setReminders(" in html and 'id="reminderCard"' in html,
+       "Webseite: Karte „Erinnerungen“ im Profil ruft die App")
+pruefe((ROOT / "android/app/src/main/res/drawable/ic_notification.xml").exists(), "Symbol für Benachrichtigungen vorhanden")
+
 print("Java-Test der Versions-Regeln:")
 if shutil.which("javac") and shutil.which("java"):
     with tempfile.TemporaryDirectory() as tmp:
@@ -77,8 +91,17 @@ if shutil.which("javac") and shutil.which("java"):
                                capture_output=True, text=True)
             print(r.stdout.rstrip())
             pruefe(r.returncode == 0, "UpdateVersionTest bestanden")
+    with tempfile.TemporaryDirectory() as tmp:
+        c = subprocess.run(["javac", "-d", tmp, str(PKG / "ReminderPlan.java"),
+                            str(ROOT / "test/ReminderPlanTest.java")], capture_output=True, text=True)
+        pruefe(c.returncode == 0, "ReminderPlan.java lässt sich übersetzen" + ("" if c.returncode == 0 else "\n" + c.stderr))
+        if c.returncode == 0:
+            r = subprocess.run(["java", "-cp", tmp, "de.fitnesstracker.app.ReminderPlanTest"],
+                               capture_output=True, text=True)
+            print(r.stdout.rstrip())
+            pruefe(r.returncode == 0, "ReminderPlanTest bestanden")
 else:
-    print("  HINWEIS Java fehlt – UpdateVersionTest übersprungen")
+    print("  HINWEIS Java fehlt – UpdateVersionTest/ReminderPlanTest übersprungen")
 
 print("Echter Abruf bei GitHub (neuestes Release):")
 try:

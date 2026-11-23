@@ -30,6 +30,11 @@ const { chromium } = require('playwright');
         }
         localStorage.setItem('bodyMetricsLogV2', JSON.stringify(log));
         localStorage.setItem('userGoalWeightV2', '85.0');
+        // Beispiel-Bestwerte und Motivation
+        localStorage.setItem('bwWorkoutsV2', JSON.stringify({ [shiftDateKey(t, -9)]: { date: shiftDateKey(t, -9), exercises: [{ exerciseId: 'bw_pullup', sets: [{ reps: 4 }] }, { exerciseId: 'bw_pushup', sets: [{ reps: 15 }] }] }, [shiftDateKey(t, -2)]: { date: shiftDateKey(t, -2), exercises: [{ exerciseId: 'bw_pullup', sets: [{ reps: 6 }] }] } }));
+        localStorage.setItem('runningLogsV2', JSON.stringify([{ id: 'r1', date: shiftDateKey(t, -8), distanceKm: 5, durationMin: 31 }, { id: 'r2', date: shiftDateKey(t, -3), distanceKm: 6.2, durationMin: 36.5 }]));
+        localStorage.setItem('sweetsFreeV2', JSON.stringify([shiftDateKey(t, -3), shiftDateKey(t, -2), shiftDateKey(t, -1)]));
+        localStorage.setItem('activeDatesV2', JSON.stringify([shiftDateKey(t, -4), shiftDateKey(t, -3), shiftDateKey(t, -2), shiftDateKey(t, -1)]));
         // Beispiel-Trainingsplan (ohne KI erzeugt), damit die Plan-Seite etwas zeigt
         localStorage.setItem('trainingProfileV2', JSON.stringify({ age: 48, heightCm: 182, level: 'Wiedereinsteiger (länger kein Sport)', experience: '', equipment: ['Klimmzugstange', 'Fitnessstudio'], equipmentOther: '', daysPerWeek: 3, minutesPerSession: 45, goals: ['Abnehmen', 'Kraft'], limitations: '' }));
         const dates = PlanCalc.periodDates(shiftDateKey(t, -2), 1);
@@ -40,7 +45,7 @@ const { chromium } = require('playwright');
                 : { date: d, type: 'ruhe', title: 'Ruhetag', durationMin: 0, warmup: '', exercises: [], cooldown: '', notes: 'Lockerer Spaziergang' }) }, dates);
         localStorage.setItem('trainingPlansV2', JSON.stringify([{ id: 'p1', createdAt: '', startDate: dates[0], weeks: 1, dates, focus: { options: ['gym', 'strength'], text: '' }, plan, progress: { [dates[0]]: { done: true, difficulty: 2, reps: { 0: '4, 4, 3' }, note: '', doneOn: dates[0] } }, checkin: null, costUsd: 0.21 }]));
     });
-    for (const tab of ['overview', 'steps', 'nutrition', 'running', 'weight', 'stats', 'motivation', 'gym-strength', 'plan', 'profile']) {
+    for (const tab of ['overview', 'steps', 'nutrition', 'running', 'weight', 'records', 'stats', 'motivation', 'gym-strength', 'plan', 'profile']) {
         await page.evaluate(t => { initApp(); switchTab(t); }, tab);
         await page.waitForTimeout(400);
         await page.screenshot({ path: path.join(outDir, 's-' + tab + '.png') });

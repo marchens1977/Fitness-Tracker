@@ -45,6 +45,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private static final int REQ_PERMISSION = 1;
     private static final int REQ_OPEN_FILE = 2;
     private static final int REQ_SAVE_FILE = 3;
+    private static final int REQ_NOTIFY = 4;
     private static final long PUSH_DELAY_MS = 1500;
 
     private WebView webView;
@@ -60,6 +61,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private boolean pushScheduled = false;
     private boolean triedOfflineCopy = false;
     private UpdateChecker updates;
+    private String pendingTab; // Seite, die nach Antippen einer Erinnerung geöffnet wird
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,9 +94,36 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         StepJobService.schedule(this);
         StepAlarmReceiver.scheduleNext(this);
+        ReminderReceiver.scheduleAll(this);
+        pendingTab = getIntent() != null ? getIntent().getStringExtra(ReminderReceiver.EXTRA_TAB) : null;
         if (stepSensor != null && !StepReader.hasPermission(this)) {
             requestStepPermission();
         }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String tab = intent.getStringExtra(ReminderReceiver.EXTRA_TAB);
+        if (tab != null) {
+            pendingTab = tab;
+            openPendingTab();
+        }
+    }
+
+    /** Nach Antippen einer Erinnerung: passende Seite öffnen (Plan oder Übersicht). */
+    private void openPendingTab() {
+        if (!pageReady || pendingTab == null) return;
+        String tab = pendingTab.matches("[a-z-]+") ? pendingTab : "overview";
+        pendingTab = null;
+        webView.evaluateJavascript("window.switchTab && window.switchTab(" + JSONObject.quote(tab) + ");", null);
+    }
+
+    private void requestNotifyPermission() {
+        if (Build.VERSION.SDK_INT < 33) return;
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return;
+        requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFY);
     }
 
     @Override
@@ -194,6 +223,13 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_NOTIFY) {
+            boolean ok = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            Toast.makeText(this, ok ? "Erinnerungen sind aktiv." : "Ohne Erlaubnis kommen keine Erinnerungen.",
+                    Toast.LENGTH_LONG).show();
+            if (pageReady) webView.evaluateJavascript("window.renderReminderCard && window.renderReminderCard();", null);
+            return;
+        }
         if (requestCode != REQ_PERMISSION) return;
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             startListening();
@@ -256,6 +292,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         public void onPageFinished(WebView view, String url) {
             pageReady = true;
             pushSteps();
+            openPendingTab();
         }
 
         @Override
@@ -331,6 +368,37 @@ public class MainActivity extends Activity implements SensorEventListener {
         @JavascriptInterface
         public String getVersion() {
             return updates.currentVersionName();
+        }
+
+        /** Erinnerungen von der Webseite übernehmen (Einstellungen + Trainingstage + letztes Wiegen). */
+        @JavascriptInterface
+        public String setReminders(String json) {
+            ReminderReceiver.saveConfig(MainActivity.this, json);
+            if (ReminderReceiver.anyOn(MainActivity.this) && !ReminderReceiver.canNotify(MainActivity.this)) {
+                handler.post(MainActivity.this::requestNotifyPermission);
+            }
+            return ReminderReceiver.canNotify(MainActivity.this) ? "ok" : "off";
+        }
+
+        /** "ok" = Benachrichtigungen erlaubt, "off" = aus. */
+        @JavascriptInterface
+        public String getNotificationState() {
+            return ReminderReceiver.canNotify(MainActivity.this) ? "ok" : "off";
+        }
+
+        /** Öffnet die Android-Einstellungen für Benachrichtigungen dieser App. */
+        @JavascriptInterface
+        public void openNotificationSettings() {
+            handler.post(() -> {
+                Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                try {
+                    startActivity(intent);
+                } catch (ActivityNotFoundException e) {
+                    startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", getPackageName(), null)));
+                }
+            });
         }
 
         /** Knopf „Nach Updates suchen“ im Profil. */

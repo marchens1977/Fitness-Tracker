@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <!-- Nach einem Neustart des Handys weiterzählen -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Erinnerungen (Wiegen, Training) als Benachrichtigung anzeigen (ab Android 13 nachfragen) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false" />
 
@@ -41,6 +43,11 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <!-- Erinnerungen: morgens Wiegen, an Trainingstagen Training -->
+        <receiver
+            android:name=".ReminderReceiver"
+            android:exported="false" />
 
         <!-- Startbildschirm-Widget mit den heutigen Schritten -->
         <receiver

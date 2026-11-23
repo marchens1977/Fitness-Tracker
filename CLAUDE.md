@@ -7,15 +7,18 @@ Samsung-Smartphone) und speichert alle Daten **nur auf dem Gerät** (im Browser-
 „localStorage“), nicht im Internet.
 
 Menü unten (seit 23.11.2026): **5 Hauptbereiche**, oben jeweils Unter-Knöpfe:
-- 🏠 **Heute**: Übersicht (Startseite: Schritte, Gewicht-Trend mit Eingabe, Serie,
-  Ernährung mit ✓/✗, Schnell-Knöpfe) · Schritte · Ernährung
+- 🏠 **Heute**: Übersicht (Startseite: Schritte, „Heute laut Plan“, Gewicht-Trend mit Eingabe,
+  Serie mit Ruhetag-Hinweis, „Ohne Süßes“, 10-Minuten-Mini-Einheit, Ernährung mit ✓/✗,
+  Schnell-Knöpfe) · Schritte · Ernährung
 - 📋 **Plan**: „Mein Trainingsplan“ (KI-Plan über die Claude-API: Profil, Schwerpunkte,
   Plan 1/2 Wochen, Abhaken, Check-in, Verlauf, KI-Zugang)
 - 🏋️ **Training**: Kraft (Studio) · Cardio (Studio) · Bodyweight · Laufen · Dehnen
-- 📈 **Fortschritt**: Motivation (Serien, Wochen-Herausforderung, „Warum“, Abzeichen) ·
+- 📈 **Fortschritt**: Motivation (Serien, feste Ruhetage, Wochen-Herausforderung, „Warum“,
+  Abzeichen) · Bestwerte (Klimmzüge, Liegestütze, längster Lauf, schnellste Pace, Schritte) ·
   Gewicht (Trend, Diagramm, Etappenziele, Wochen-Ø, Tageswerte) · Statistik (Gesamtbilanz,
   Verlauf, Übungs-Entwicklung, Tages-Archiv)
-- 👤 **Profil**: Alter, Datensicherung (Backup speichern/laden), App-Version & Updates
+- 👤 **Profil**: Alter, Datensicherung (Backup speichern/laden), App-Version & Updates,
+  Erinnerungen (nur in der Android-App)
 
 Der Nutzer trägt alles **abends von Hand** ein (bewusste Entscheidung, hält den Fokus).
 Nur die Schritte kommen automatisch aus der eigenen Android-App.
@@ -41,7 +44,8 @@ Wichtige Details in `index.html`:
   `nutritionGoalsV2`, `trainingProfileV2`, `trainingPlansV2`, `aiUsageV2`, `aiApiKeyV2`
   (nur auf dem Gerät, **nie im Backup**), `userWeightV2`, `userGoalWeightV2`, `userBodyFatV2` (nur noch
   still gespeichert, nicht angezeigt), `bodyMetricsLogV2`, `weightMilestonesV2`, `userDobV2`,
-  `personalWhyV2`, `activeDatesV2`.
+  `personalWhyV2`, `activeDatesV2`, `restWeekdaysV2`, `sweetsFreeV2`, `miniSessionsV2`,
+  `recordsSeenV2`, `remindersV2`.
   **Diese Namen nicht ändern**, sonst sind bestehende Daten auf dem Handy „weg“.
 - Navigation: `NAV_GROUPS` (Hauptbereich → Unterseiten), `switchGroup(...)` für die
   Knöpfe unten, `switchTab(...)` für eine Unterseite (Namen wie die Bereiche `tab-...`).
@@ -101,6 +105,28 @@ Wichtige Details in `index.html`:
     Gewichts-Ø) → neue Schwerpunkte → nächster Plan; die KI schreibt dabei einen kurzen ehrlichen
     Wochenrückblick (`plan.review`). Alte Pläne mit Schwerpunkten und Check-in im „Verlauf“.
   - Startseite: Karte „Heute laut Plan“.
+- **Motivation (Teil 3, seit 23.11.2026):** Rechenteil im Block `MOTIV-CALC-START … MOTIV-CALC-END`
+  (`MotivCalc`).
+  - Serie „X Tage am Stück aktiv“ (`calculateStreaks`): gezählt werden aktive Tage (`activeDatesV2`:
+    Training, Lauf, Schritte, Ernährung, Gewicht, erledigte Plan-Einheit, Mini-Einheit).
+    **Ruhetage unterbrechen nicht** (zählen aber nicht mit): Ruhetage aus dem Plan (neuester Plan
+    gewinnt) und – für Tage ohne Plan – feste Wochentage (`restWeekdaysV2`, 0 = Mo, höchstens 3,
+    einstellbar unter Motivation). Heute darf noch offen sein.
+  - „Ohne Süßes“ (`sweetsFreeV2`): Haken für heute und gestern (abends nachtragen), eigene Serie
+    und Rekord (Rekord wird aus den Daten berechnet; ein zurückgenommener Tag zählt nicht).
+  - 10-Minuten-Mini-Einheit: feste Übungen ohne Geräte, ohne KI/Kosten (`MINI_SESSION`); „Geschafft“
+    speichert den Tag in `miniSessionsV2` und zählt als aktiver Tag.
+  - Bestwerte (Fortschritt → Bestwerte): Klimmzüge und Liegestütze (bester Satz, aus Bodyweight
+    und Plan-Wiederholungen; erleichterte Varianten wie negative/australische Klimmzüge oder
+    Liegestütze auf Knien/erhöht zählen nicht), längster Lauf, schnellste Pace (ab 1 km), meiste
+    Schritte (nur abgeschlossene Tage). Verlauf = jede Verbesserung (mehrere am selben Tag = ein
+    Eintrag). „Neuer Rekord!“-Fenster nur bei echter Verbesserung gegenüber `recordsSeenV2`;
+    erster Wert und Backup laden werden still übernommen.
+  - Erinnerungen (Android-App, ab der App-Version nach dem 23.11.2026): Karte im Profil (nur in der
+    App sichtbar). Webseite schickt per `AndroidApp.setReminders(json)` Einstellungen
+    (`remindersV2`: Wiegen an/aus + Uhrzeit, Training an/aus + Uhrzeit), offene Trainingstage aus
+    dem Plan (mit Titel) und den letzten Wiege-Tag. Wiege-Erinnerung entfällt, wenn heute schon
+    gewogen; Trainings-Erinnerung nur an offenen Trainingstagen. Antippen öffnet Übersicht bzw. Plan.
 - **Entfernt am 23.11.2026** (Wunsch des Nutzers, es gab noch keine echten Daten):
   Wasser-Tracker (`waterV2`/`waterHistoryV2` werden beim Start gelöscht), Sync-Knöpfe und
   Hinweise auf adidas Running/Yazio/Health Connect, die Fremd-Schnittstelle
@@ -123,6 +149,12 @@ Wichtige Details in `index.html`:
   zeigt Schritte heute + Ziel + Balken. Wert = größerer aus Chip und Webseite
   (Webseite meldet per `AndroidApp.reportSteps(datum, schritte, ziel)` aus
   `renderSteps()`). Aktualisiert sich bei jedem Ablesen (ca. alle 15 Min.).
+- **Erinnerungen** (`ReminderReceiver.java`, Regeln in `ReminderPlan.java`, getestet mit
+  `test/ReminderPlanTest.java`): ungefähre Wecker (`setAndAllowWhileIdle`, keine Sonder-Erlaubnis
+  für exakte Wecker), nach Neustart neu eingeplant (`StepAlarmReceiver`). Erlaubnis
+  `POST_NOTIFICATIONS` wird ab Android 13 beim Einschalten erfragt; ist sie aus, zeigt die Webseite
+  einen Knopf zu den Android-Einstellungen (`AndroidApp.openNotificationSettings()`).
+  Benachrichtigungs-Symbol `res/drawable/ic_notification.xml`.
 - Download der fertigen App:
   https://github.com/marchens1977/Fitness-Tracker/releases/latest/download/FitnessTracker.apk
   (wird bei jeder Änderung an `android/` auf `main` neu gebaut).
@@ -153,7 +185,9 @@ Wichtige Details in `index.html`:
   und `UpdateVersion.java` passen zusammen; gleiche APK-Datei; keine Erlaubnis
   `REQUEST_INSTALL_PACKAGES`; kein Schlüssel im Code; startet den Java-Test
   `test/UpdateVersionTest.java` (z. B. „app-v1.0.10“ → 10, „10 ist neuer als 9“); fragt zum Schluss
-  echt bei GitHub das neueste Release ab (ohne Internet nur Hinweis).
+  echt bei GitHub das neueste Release ab (ohne Internet nur Hinweis). Prüft außerdem die
+  Erinnerungen (Erlaubnis im Manifest, Empfänger angemeldet, keine exakten Wecker, Neustart,
+  Anbindung an die Webseite) und startet `test/ReminderPlanTest.java`.
 - `node test/gewicht_test.js` – prüft die Gewichts-Berechnungen ohne Browser: ein Wert pro Tag,
   7-Tage-Ø mit Lücken, Kalenderwochen Mo–So (auch Jahreswechsel), Veränderung zur Vorwoche (keine
   falschen Vergleiche über fehlende Wochen), Hinweise (Schwankung, ideales Tempo, zu schnell),
@@ -166,6 +200,15 @@ Wichtige Details in `index.html`:
   wird **nachgespielt** (kein Guthaben, kein echter Schlüssel): Profil, Schlüssel, Fehlermeldungen
   (falscher Schlüssel, kein Guthaben), Plan erstellen, Kopfzeilen, Abhaken, Check-in, nächster
   Plan, Verlauf, Backup ohne Schlüssel, Schlüssel löschen.
+- `node test/motivation_test.js` – prüft die Motivations-Berechnungen ohne Browser: Ruhetage (Plan,
+  feste Wochentage, Plan geht vor), Serie mit Ruhetagen, „ohne Süßes“-Serie (auch Jahreswechsel),
+  Bestwerte (welche Übungen zählen, Wiederholungen aus Text, nur abgeschlossene Schritte-Tage),
+  „Neuer Rekord!“ nur bei Verbesserung.
+- `node test/motivation_web_test.js` – Teil 3 im Browser: feste Ruhetage, Mini-Einheit (aktiver Tag,
+  rückgängig), „ohne Süßes“, Rekord-Feier beim Bodyweight-Satz, Bestwerte-Seite, Backup (enthält
+  alles, Laden feiert nicht), Erinnerungs-Karte (in Chrome versteckt; mit nachgespielter App:
+  Einstellungen, offene Trainingstage, letzter Wiege-Tag, Hinweis bei ausgeschalteten
+  Benachrichtigungen).
 - `node test/app_test.js` – prüft die Bedienung: 5 Menü-Knöpfe und Unter-Knöpfe, Start auf
   „Übersicht“, kein Körperfett/Yazio/adidas/Wasser, Lauf-Zeit „32:15“ → Pace/km/h, Nachtragen
   für gestern, Ernährung mit Zielen (✓/✗), Gewicht, Schritte aus der Android-App
@@ -269,12 +312,30 @@ Wichtige Details in `index.html`:
   Neue Tests `test/plan_test.js`, `test/plan_web_test.js`. **Echte KI-Anfrage noch ungetestet**
   (Claude hat keinen Schlüssel des Nutzers und verbraucht kein fremdes Guthaben).
 
+- 23.11.2026 – Nutzer: erster echter KI-Plan hat geklappt (eigener API-Schlüssel nur für die App).
+- 23.11.2026 – Teil 3 „Motivation“: Serie mit Ruhetagen (Plan + feste Wochentage), „Ohne Süßes“,
+  10-Minuten-Mini-Einheit, Bestwerte-Seite mit „Neuer Rekord!“, Erinnerungen über die Android-App
+  (Wiegen morgens, Training an Plan-Tagen; neue App-Version nötig). Neue Tests
+  `test/motivation_test.js`, `test/motivation_web_test.js`, `test/ReminderPlanTest.java`.
+
+### Test-Liste Teil 3 „Motivation“ (zum Abhaken am Handy)
+- [ ] App aktualisieren: Profil → „Nach Updates suchen“ → installieren (neue Version mit Erinnerungen).
+- [ ] Profil → „Erinnerungen“: Wiegen an (z. B. 07:00), Training an (z. B. 17:00) → speichern →
+      Android fragt „Benachrichtigungen erlauben?“ → Erlauben → „✓ Aktiv“.
+- [ ] Am nächsten Morgen kommt die Wiege-Erinnerung (nicht, wenn schon gewogen). Antippen öffnet die App.
+- [ ] An einem Trainingstag aus dem Plan kommt nachmittags die Trainings-Erinnerung (nicht, wenn erledigt).
+- [ ] Startseite: „Ohne Süßes“ abhaken (heute / gestern) → Serie zählt.
+- [ ] Mini-Einheit: „Übungen zeigen“, „✓ Geschafft“ → Serie hält.
+- [ ] Ruhetag aus dem Plan: Serie bleibt stehen, Hinweis „Heute ist Ruhetag“.
+- [ ] Fortschritt → Bestwerte: Werte erscheinen; bei mehr Klimmzügen als bisher kommt „Neuer Rekord!“.
+- [ ] Nach Handy-Neustart kommen die Erinnerungen weiterhin.
+
 ### Test-Liste Teil 2 „KI-Trainingsplan“ (zum Abhaken am Handy)
 - [ ] In der Anthropic-Konsole eigenen Schlüssel für die App anlegen + Ausgabenlimit (z. B. 5 $/Monat).
-- [ ] Plan → unten „KI-Zugang“: Schlüssel einfügen → „✓ Schlüssel gespeichert (…xxxx)“.
+- [x] Plan → unten „KI-Zugang“: Schlüssel einfügen → „✓ Schlüssel gespeichert (…xxxx)“.
 - [ ] Trainingsprofil ausfüllen und speichern → kurze Zusammenfassung erscheint.
 - [ ] Schwerpunkte wählen, 1 Woche, „Plan von der KI erstellen lassen“ → nach 1–3 Min. steht der Plan da
-      (App währenddessen offen lassen). **Erster echter Test der KI-Anbindung!**
+      (App währenddessen offen lassen). **Erster echter Test der KI-Anbindung!** → klappt (23.11.)
 - [ ] Kosten-Meldung erscheint; in der Konsole stimmt der Betrag ungefähr.
 - [ ] Startseite zeigt „Heute laut Plan“.
 - [ ] Einheit aufklappen → „Wie schwer?“ wählen, Klimmzüge eintragen → „Als erledigt speichern“ → ✓.
@@ -310,11 +371,7 @@ Wichtige Details in `index.html`:
 - **Auftrag vom 23.11.2026 (Teile nacheinander, nach jedem Teil dem Nutzer zeigen):**
   - [x] Teil 1 – Aufräumen (Menü, Startseite, Reihenfolge) + Ernährung/Laufen manuell.
   - [x] Teil 2 – KI-Trainingsplan (23.11.; echte KI-Anfrage noch vom Nutzer zu testen).
-  - [ ] Teil 3 – Motivation: Serie mit Ruhetagen, ~~Etappenziele mit Feier~~ (erledigt 23.11.),
-        Bestwerte + „Neuer Rekord!“ (Wiederholungen aus dem Plan nutzen), ~~KI-Wochenrückblick~~
-        (im Check-in von Teil 2 erledigt), 10-Min-Mini-Einheit,
-        „heute ohne Süßes“-Serie, Erinnerungen über die Android-App (Trainingstage **und**
-        morgendliche Wiege-Erinnerung, Uhrzeit wählbar – zusammen in einer APK-Runde).
+  - [x] Teil 3 – Motivation (23.11.; Erinnerungen am Handy noch zu testen).
   - [ ] Teil 4 – Export/Import aller neuen Daten.
 
 - **Update-Suche am Handy testen** (Test-Liste oben). Ungetestet sind: Fenster/Meldungen der App,
