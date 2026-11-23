@@ -19,6 +19,7 @@ node test/motivation_test.js
 node test/app_test.js
 node test/plan_web_test.js
 node test/motivation_web_test.js
+node test/backup_test.js
 node test/update_web.js "$TMP/bilder"
 python3 test/update_pruefung.py
 echo "Bilder liegen in: $TMP/bilder"

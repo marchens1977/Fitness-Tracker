@@ -91,6 +91,8 @@ function pruefe(ok, was) {
     delete b2.recordsSeenV2;
     b2.bwWorkoutsV2[today].exercises[0].sets.push({ id: 1, reps: 12 });
     await page.setInputFiles('#importFile', { name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(b2)) });
+    await page.waitForSelector('#appModal', { state: 'visible' });
+    await page.click('#appModalYes');
     await page.waitForTimeout(700);
     pruefe(!(await page.locator('#appModal').isVisible()), 'Nach Backup laden keine Rekord-Feier');
     pruefe(await page.evaluate(() => JSON.parse(localStorage.getItem('recordsSeenV2')).pullups) === 12, 'Rekord still übernommen');

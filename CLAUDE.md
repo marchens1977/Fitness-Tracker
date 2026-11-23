@@ -127,6 +127,21 @@ Wichtige Details in `index.html`:
     (`remindersV2`: Wiegen an/aus + Uhrzeit, Training an/aus + Uhrzeit), offene Trainingstage aus
     dem Plan (mit Titel) und den letzten Wiege-Tag. Wiege-Erinnerung entfällt, wenn heute schon
     gewogen; Trainings-Erinnerung nur an offenen Trainingstagen. Antippen öffnet Übersicht bzw. Plan.
+- **Backup (Teil 4, seit 23.11.2026):** `BACKUP_SCHEMA` listet alle Speicher; `exportBackup()`
+  schreibt jeden davon (Sicherheitsnetz: auch künftig neue Schema-Einträge) plus `backupFormat`
+  (`fitness-tracker-backup/3`) und `exportedAt`. **Bewusst nicht im Backup:** `aiApiKeyV2`
+  (Schlüssel), `lastBackupV2` (Datum des letzten Backups, nur dieses Gerät), `lastImportUndoV2`
+  (Rückgängig-Kopie), alte Speicher `gymWorkoutsV2`/`waterV2`/`waterHistoryV2`.
+  - **Neue Funktion mit neuem Speicher → Namen in `BACKUP_SCHEMA` eintragen!** (`test/backup_test.js`
+    schlägt sonst an.)
+  - Laden: Datei prüfen (`parseBackupData`), dann Rückfrage mit Überblick (`summarizeBackup`:
+    Datum, Trainingstage, Läufe, Gewichtswerte, Pläne …). Bereiche aus der Datei ersetzen die
+    aktuellen, andere bleiben stehen (ältere Backups). Vorher wird der alte Stand in
+    `lastImportUndoV2` gesichert → Knopf „Letztes Laden rückgängig machen“. Ungültige Datei →
+    Meldung, nichts geändert. Geladene Rekorde werden nicht als „neu“ gefeiert.
+  - Anzeige „Letztes Backup: Datum“, ab 14 Tagen orange Hinweis „bitte neu sichern“. In der
+    Android-App wird das Datum gesetzt, sobald der Speicher-Dialog aufgeht (die App meldet nicht
+    zurück, ob wirklich gespeichert wurde).
 - **Entfernt am 23.11.2026** (Wunsch des Nutzers, es gab noch keine echten Daten):
   Wasser-Tracker (`waterV2`/`waterHistoryV2` werden beim Start gelöscht), Sync-Knöpfe und
   Hinweise auf adidas Running/Yazio/Health Connect, die Fremd-Schnittstelle
@@ -209,6 +224,10 @@ Wichtige Details in `index.html`:
   alles, Laden feiert nicht), Erinnerungs-Karte (in Chrome versteckt; mit nachgespielter App:
   Einstellungen, offene Trainingstage, letzter Wiege-Tag, Hinweis bei ausgeschalteten
   Benachrichtigungen).
+- `node test/backup_test.js` – Teil 4 im Browser: jeder im Code benutzte Speicher-Name ist im Backup
+  (außer den bewusst ausgenommenen), Rundreise mit **allen** Speichern (befüllen → speichern →
+  löschen → laden → jeder Wert gleich), Schlüssel nie in der Datei und bleibt auf dem Gerät,
+  Rückfrage mit Überblick, Abbrechen, Teil-Backup, Rückgängig, ungültige Dateien, „Letztes Backup“.
 - `node test/app_test.js` – prüft die Bedienung: 5 Menü-Knöpfe und Unter-Knöpfe, Start auf
   „Übersicht“, kein Körperfett/Yazio/adidas/Wasser, Lauf-Zeit „32:15“ → Pace/km/h, Nachtragen
   für gestern, Ernährung mit Zielen (✓/✗), Gewicht, Schritte aus der Android-App
@@ -318,6 +337,17 @@ Wichtige Details in `index.html`:
   (Wiegen morgens, Training an Plan-Tagen; neue App-Version nötig). Neue Tests
   `test/motivation_test.js`, `test/motivation_web_test.js`, `test/ReminderPlanTest.java`.
 
+- 23.11.2026 – Teil 4 „Export/Import“: Backup enthält nachweislich alle Daten (außer KI-Schlüssel),
+  Rückfrage mit Überblick vor dem Laden, „Rückgängig“, Anzeige „Letztes Backup“. Nur Webseite,
+  keine neue App-Version nötig. Neuer Test `test/backup_test.js`. Damit sind Teil 1–4 fertig.
+
+### Test-Liste Teil 4 „Backup“ (zum Abhaken am Handy)
+- [ ] Profil → „Backup speichern“ → Speicherort wählen → „Letztes Backup: (heute) ✓“.
+- [ ] Die Datei enthält keinen Schlüssel (Text „sk-ant-“ kommt nicht vor).
+- [ ] „Backup laden“ → dieselbe Datei wählen → Rückfrage zeigt Datum und Inhalt → „Abbrechen“ ändert nichts.
+- [ ] Nochmal laden → „Laden & ersetzen“ → alles ist noch da (Plan, Gewicht, Serien, Bestwerte).
+- [ ] „Letztes Laden rückgängig machen“ erscheint und funktioniert.
+
 ### Test-Liste Teil 3 „Motivation“ (zum Abhaken am Handy)
 - [ ] App aktualisieren: Profil → „Nach Updates suchen“ → installieren (neue Version mit Erinnerungen).
 - [ ] Profil → „Erinnerungen“: Wiegen an (z. B. 07:00), Training an (z. B. 17:00) → speichern →
@@ -372,7 +402,7 @@ Wichtige Details in `index.html`:
   - [x] Teil 1 – Aufräumen (Menü, Startseite, Reihenfolge) + Ernährung/Laufen manuell.
   - [x] Teil 2 – KI-Trainingsplan (23.11.; echte KI-Anfrage noch vom Nutzer zu testen).
   - [x] Teil 3 – Motivation (23.11.; Erinnerungen am Handy noch zu testen).
-  - [ ] Teil 4 – Export/Import aller neuen Daten.
+  - [x] Teil 4 – Export/Import aller Daten (23.11.).
 
 - **Update-Suche am Handy testen** (Test-Liste oben). Ungetestet sind: Fenster/Meldungen der App,
   Download im Browser, Installation über die alte Version – das geht nur am echten Handy.

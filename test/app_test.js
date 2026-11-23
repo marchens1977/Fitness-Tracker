@@ -186,6 +186,8 @@ function pruefe(ok, was) {
     pruefe(backup.weightMilestonesV2 && backup.weightMilestonesV2.celebrated >= 1, 'Backup enthält gefeierte Etappen');
     await page.evaluate(() => localStorage.clear());
     await page.setInputFiles('#importFile', { name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
+    await page.waitForSelector('#appModal', { state: 'visible' });
+    await page.click('#appModalYes');
     await page.waitForTimeout(300);
     pruefe(await page.evaluate(() => getNutritionGoals().kcal.value) === 2000, 'Backup laden stellt Ziele wieder her');
     pruefe(await page.evaluate(() => getRuns().length) === 1, 'Backup laden stellt Läufe wieder her');

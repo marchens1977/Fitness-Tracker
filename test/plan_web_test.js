@@ -180,6 +180,8 @@ function sse(obj) {
     pruefe(!backupText.includes(FAKE_KEY) && !('aiApiKeyV2' in backup), 'Backup enthält KEINEN Schlüssel');
     await page.evaluate(() => { const k = localStorage.getItem('aiApiKeyV2'); localStorage.clear(); localStorage.setItem('aiApiKeyV2', k); });
     await page.setInputFiles('#importFile', { name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(backupText) });
+    await page.waitForSelector('#appModal', { state: 'visible' });
+    await page.click('#appModalYes');
     await page.waitForTimeout(300);
     pruefe(await page.evaluate(() => getTrainingPlans().length) === 2 && await page.evaluate(() => !!getTrainingProfile()), 'Backup laden stellt Pläne und Profil wieder her');
 

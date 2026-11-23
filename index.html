@@ -1857,11 +1857,14 @@
 
         <div class="card">
             <h2>Datensicherung</h2>
-            <p class="muted" style="margin-bottom: 10px;">Sichere alle Trainings-, Schritt-, Ernährungs- und Gewichtsdaten als Datei auf deinem Smartphone.</p>
+            <p class="muted" style="margin: 0 0 6px 0; font-size: 0.85rem;">Sichert <strong>alle</strong> Daten als Datei: Trainings, Läufe, Schritte, Ernährung und Ziele, Gewicht und Etappen, Trainingsprofil, Pläne mit Schwerpunkten und Check-ins, Bestwerte, Serien (Süßes, Mini-Einheit, Ruhetage), Erinnerungen, „Warum“.</p>
+            <p class="muted" style="margin: 0 0 10px 0; font-size: 0.8rem;">🔒 Nicht enthalten: dein KI-Schlüssel (aus Sicherheitsgründen) – nach einem Handywechsel neu eingeben.</p>
+            <p id="backupInfo" style="margin: 0 0 8px 0; font-size: 0.85rem;"></p>
             <div class="btn-row">
                 <button type="button" class="btn-purple" onclick="exportBackup()">Backup speichern</button>
                 <button type="button" class="btn-secondary" onclick="triggerImport()">Backup laden</button>
             </div>
+            <button type="button" class="btn-secondary" id="undoImportBtn" style="display: none; margin-top: 8px;" onclick="undoLastImport()">Letztes Laden rückgängig machen</button>
             <input type="file" id="importFile" accept=".json,application/json" style="display: none;" onchange="importBackup(event)">
         </div>
 
@@ -8244,6 +8247,7 @@
     function exportBackup() {
         flushPendingLiveSteps();
         const payload = {
+            backupFormat: BACKUP_FORMAT,
             exportedAt: new Date().toISOString(),
             gymStrengthWorkoutsV2: getGymStrengthWorkouts(),
             gymCardioWorkoutsV2: getGymCardioWorkouts(),
@@ -8271,7 +8275,16 @@
             remindersV2: readJson('remindersV2', null),
             personalWhyV2: localStorage.getItem('personalWhyV2')
         };
+        // Sicherheitsnetz: jeder Schlüssel aus dem Schema kommt mit (auch künftig neue)
+        BACKUP_SCHEMA.forEach(([key]) => {
+            if (key === 'nutritionV2' || Object.prototype.hasOwnProperty.call(payload, key)) return;
+            const raw = localStorage.getItem(key);
+            if (raw === null) { payload[key] = null; return; }
+            try { payload[key] = JSON.parse(raw); } catch (e) { payload[key] = raw; }
+        });
         const fileName = `fitness_backup_${getLocalDateKey()}.json`;
+        localStorage.setItem('lastBackupV2', getLocalDateKey());
+        renderBackupInfo();
         if (window.AndroidApp && typeof window.AndroidApp.saveFile === 'function') {
             // In der Android-App: Speicherort wählen lassen (Downloads in der App nicht möglich)
             window.AndroidApp.saveFile(fileName, JSON.stringify(payload, null, 2));
@@ -8293,6 +8306,9 @@
         document.getElementById('importFile').click();
     }
 
+    const BACKUP_FORMAT = 'fitness-tracker-backup/3';
+    // Bewusst NICHT im Backup: aiApiKeyV2 (Schlüssel), lastBackupV2/lastImportUndoV2 (nur dieses Gerät),
+    // gymWorkoutsV2/waterV2/waterHistoryV2 (alte, abgelöste Speicher)
     const BACKUP_SCHEMA = [
         ['gymStrengthWorkoutsV2', 'object'],
         ['gymCardioWorkoutsV2', 'object'],
@@ -8330,47 +8346,139 @@
         return false;
     }
 
+    // Backup-Datei prüfen: liefert die zu schreibenden Werte oder wirft einen Fehler
+    function parseBackupData(data) {
+        if (data === null || typeof data !== 'object' || Array.isArray(data)) throw new Error('invalid');
+        const toWrite = [];
+        BACKUP_SCHEMA.forEach(([key, type]) => {
+            if (!Object.prototype.hasOwnProperty.call(data, key)) return;
+            const value = data[key];
+            if (value === null || value === undefined) {
+                toWrite.push({ key, remove: true });
+            } else if (isValidBackupValue(value, type)) {
+                toWrite.push({ key, value: type === 'string' || type === 'number' ? String(value) : JSON.stringify(value) });
+            } else {
+                throw new Error('invalid');
+            }
+        });
+        if (toWrite.length === 0) throw new Error('invalid');
+        return toWrite;
+    }
+
+    // Kurzer Überblick, was in der Datei steckt (für die Rückfrage vor dem Laden)
+    function summarizeBackup(data) {
+        const len = v => (Array.isArray(v) ? v.length : (v && typeof v === 'object' ? Object.keys(v).length : 0));
+        const trainingDays = new Set([
+            ...Object.keys(data.gymStrengthWorkoutsV2 || {}), ...Object.keys(data.gymCardioWorkoutsV2 || {}),
+            ...Object.keys(data.bwWorkoutsV2 || {}), ...Object.keys(data.stretchWorkoutsV2 || {})
+        ]).size;
+        const parts = [];
+        const add = (n, one, many) => { if (n > 0) parts.push(`${n} ${n === 1 ? one : many}`); };
+        add(trainingDays, 'Trainingstag', 'Trainingstage');
+        add(len(data.runningLogsV2), 'Lauf', 'Läufe');
+        add(len(data.bodyMetricsLogV2), 'Gewichtswert', 'Gewichtswerte');
+        add(len(data.nutritionHistoryV2), 'Ernährungstag', 'Ernährungstage');
+        add(len(data.stepsHistoryV2), 'Schritte-Tag', 'Schritte-Tage');
+        add(len(data.trainingPlansV2), 'Trainingsplan', 'Trainingspläne');
+        add(len(data.sweetsFreeV2), 'Tag ohne Süßes', 'Tage ohne Süßes');
+        add(len(data.miniSessionsV2), 'Mini-Einheit', 'Mini-Einheiten');
+        if (data.trainingProfileV2) parts.push('Trainingsprofil');
+        let when = '';
+        if (typeof data.exportedAt === 'string' && !isNaN(new Date(data.exportedAt).getTime())) {
+            const d = getLocalDateKey(new Date(data.exportedAt));
+            when = `Backup vom ${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}`;
+        }
+        return { when, parts };
+    }
+
+    function backupSnapshot() {
+        const snap = {};
+        BACKUP_SCHEMA.forEach(([key]) => { snap[key] = localStorage.getItem(key); });
+        return snap;
+    }
+
+    function applyBackup(toWrite) {
+        flushPendingLiveSteps();
+        // Sicherheitskopie des bisherigen Stands, damit „Rückgängig“ möglich ist
+        try {
+            localStorage.setItem('lastImportUndoV2', JSON.stringify({ savedAt: new Date().toISOString(), data: backupSnapshot() }));
+        } catch (e) { /* Speicher voll: dann ohne Rückgängig */ }
+        toWrite.forEach(item => {
+            if (item.remove) localStorage.removeItem(item.key);
+            else localStorage.setItem(item.key, item.value);
+        });
+        initApp();
+        checkNewRecords(true); // geladene Rekorde nicht als „neu“ feiern
+        showToast('Backup geladen.');
+    }
+
     function importBackup(event) {
         const file = event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = function (e) {
+            event.target.value = '';
+            let data;
+            let toWrite;
             try {
-                const data = JSON.parse(e.target.result);
-                if (data === null || typeof data !== 'object' || Array.isArray(data)) {
-                    throw new Error('invalid');
-                }
-
-                const toWrite = [];
-                BACKUP_SCHEMA.forEach(([key, type]) => {
-                    if (!Object.prototype.hasOwnProperty.call(data, key)) return;
-                    const value = data[key];
-                    if (value === null || value === undefined) {
-                        toWrite.push({ key, remove: true });
-                    } else if (isValidBackupValue(value, type)) {
-                        toWrite.push({ key, value: type === 'string' || type === 'number' ? String(value) : JSON.stringify(value) });
-                    } else {
-                        throw new Error('invalid');
-                    }
-                });
-                if (toWrite.length === 0) {
-                    throw new Error('invalid');
-                }
-
-                flushPendingLiveSteps();
-                toWrite.forEach(item => {
-                    if (item.remove) localStorage.removeItem(item.key);
-                    else localStorage.setItem(item.key, item.value);
-                });
-                initApp();
-                checkNewRecords(true); // geladene Rekorde nicht als „neu“ feiern
-                showToast('Backup geladen.');
+                data = JSON.parse(e.target.result);
+                toWrite = parseBackupData(data);
             } catch (err) {
                 showToast('Ungültige Backup-Datei.');
+                return;
             }
-            event.target.value = '';
+            const sum = summarizeBackup(data);
+            showModal({
+                icon: '💾',
+                title: 'Backup laden?',
+                text: `${sum.when ? sum.when + ': ' : ''}${sum.parts.length ? sum.parts.join(', ') : 'Einstellungen'}. ` +
+                    'Die Bereiche aus der Datei ersetzen deine aktuellen Daten. Du kannst das danach rückgängig machen.',
+                yes: 'Laden & ersetzen',
+                no: 'Abbrechen',
+                onYes: () => applyBackup(toWrite)
+            });
         };
         reader.readAsText(file);
+    }
+
+    function undoLastImport() {
+        const undo = readJson('lastImportUndoV2', null);
+        if (!undo || !undo.data) return;
+        showModal({
+            icon: '↩️',
+            title: 'Laden rückgängig machen?',
+            text: 'Der Stand vor dem letzten „Backup laden“ wird wiederhergestellt.',
+            yes: 'Wiederherstellen',
+            no: 'Abbrechen',
+            onYes: () => {
+                BACKUP_SCHEMA.forEach(([key]) => {
+                    if (!Object.prototype.hasOwnProperty.call(undo.data, key)) return;
+                    const v = undo.data[key];
+                    if (v === null) localStorage.removeItem(key); else localStorage.setItem(key, v);
+                });
+                localStorage.removeItem('lastImportUndoV2');
+                initApp();
+                checkNewRecords(true);
+                showToast('Vorheriger Stand wiederhergestellt.');
+            }
+        });
+    }
+
+    function renderBackupInfo() {
+        const info = document.getElementById('backupInfo');
+        if (!info) return;
+        const last = localStorage.getItem('lastBackupV2');
+        const today = getLocalDateKey();
+        if (!last) {
+            info.textContent = '⚠️ Noch kein Backup gespeichert – am besten jetzt einmal sichern.';
+            info.style.color = '#ffb48f';
+        } else {
+            const days = Math.round((new Date(today) - new Date(last)) / 86400000);
+            info.textContent = `Letztes Backup: ${last.slice(8, 10)}.${last.slice(5, 7)}.${last.slice(0, 4)}` +
+                (days >= 14 ? ` – schon ${days} Tage her, bitte neu sichern.` : (days === 0 ? ' (heute) ✓' : ''));
+            info.style.color = days >= 14 ? '#ffb48f' : '#3ddc84';
+        }
+        document.getElementById('undoImportBtn').style.display = readJson('lastImportUndoV2', null) ? '' : 'none';
     }
 
     /* Datum aus der Android-App prüfen: "JJJJ-MM-TT" oder Zeitstempel -> lokaler Tag.
@@ -8532,6 +8640,7 @@
         renderOverview();
         showAppUpdateCard();
         renderReminderCard();
+        renderBackupInfo();
         syncRemindersToApp();
         setTimeout(() => checkNewRecords(), 400); // z. B. neuer Schritte-Rekord von gestern
     }
