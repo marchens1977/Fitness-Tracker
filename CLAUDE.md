@@ -6,15 +6,17 @@ Eine persönliche Fitness-App für das Handy. Sie läuft im Browser (Chrome auf 
 Samsung-Smartphone) und speichert alle Daten **nur auf dem Gerät** (im Browser-Speicher
 „localStorage“), nicht im Internet.
 
-Bereiche der App:
-- Training: Krafttraining (Studio), Cardio, Bodyweight (eigenes Körpergewicht), Dehnen
-- Schritte: Schrittzähler, Tagesziel, Rückblick letzte 7 Tage
-- Laufen: Läufe eintragen und vergleichen („adidas Running Schnittstelle“)
-- Ernährung: Mahlzeiten, Wasser-Tracker („Yazio Schnittstelle“)
-- Statistik: Gesamtbilanz, Verlauf, Übungs-Entwicklung, Tages-Archiv
-- Motivation: Streaks, Wochen-Herausforderung, persönliches „Warum“, Abzeichen
-- Körper: Waage, Gewichtsziel, Körperwerte, Alter
-- Datensicherung: Backup speichern / laden (JSON-Datei)
+Menü unten (seit 23.11.2026): **5 Hauptbereiche**, oben jeweils Unter-Knöpfe:
+- 🏠 **Heute**: Übersicht (Startseite: Schritte, Serie, Gewicht, Ernährung mit ✓/✗,
+  Schnell-Knöpfe) · Schritte · Ernährung
+- 📋 **Plan**: „Mein Trainingsplan“ (Platzhalter, kommt mit Teil 2)
+- 🏋️ **Training**: Kraft (Studio) · Cardio (Studio) · Bodyweight · Laufen · Dehnen
+- 📈 **Fortschritt**: Motivation (Serien, Wochen-Herausforderung, „Warum“, Abzeichen) ·
+  Gewicht · Statistik (Gesamtbilanz, Verlauf, Übungs-Entwicklung, Tages-Archiv)
+- 👤 **Profil**: Alter, Datensicherung (Backup speichern/laden), App-Version & Updates
+
+Der Nutzer trägt alles **abends von Hand** ein (bewusste Entscheidung, hält den Fokus).
+Nur die Schritte kommen automatisch aus der eigenen Android-App.
 
 **Online:** https://marchens1977.github.io/Fitness-Tracker/ (über GitHub Pages).
 Jede Änderung, die in `main` übernommen wird, erscheint dort nach ein bis zwei
@@ -33,17 +35,25 @@ die alte Version angezeigt wird.
 Wichtige Details in `index.html`:
 - Gespeicherte Daten (localStorage-Schlüssel, alle mit Endung `V2`), z. B.
   `gymStrengthWorkoutsV2`, `gymCardioWorkoutsV2`, `bwWorkoutsV2`, `stretchWorkoutsV2`,
-  `runningLogsV2`, `stepsHistoryV2`, `dailyStepGoalV2`, `nutritionV2`,
-  `nutritionHistoryV2`, `waterV2`, `waterHistoryV2`, `userWeightV2`,
-  `userGoalWeightV2`, `userBodyFatV2`, `bodyMetricsLogV2`, `userDobV2`,
+  `runningLogsV2`, `stepsHistoryV2`, `dailyStepGoalV2`, `nutritionHistoryV2`,
+  `nutritionGoalsV2`, `userWeightV2`, `userGoalWeightV2`, `userBodyFatV2` (nur noch
+  still gespeichert, nicht angezeigt), `bodyMetricsLogV2`, `userDobV2`,
   `personalWhyV2`, `activeDatesV2`.
   **Diese Namen nicht ändern**, sonst sind bestehende Daten auf dem Handy „weg“.
-- Datenschnittstelle „fitness-bridge/1“: Fremddaten (Schritte, Gewicht, Läufe,
-  Ernährung) können per JSON-Datei über „Backup laden“ oder per
-  `window.FitnessHealthBridge.ingest(...)` importiert werden. Wiederholter Import
-  erzeugt keine Doppelungen.
-- Die „Sync“-Knöpfe bei adidas Running und Yazio zeigen bisher nur einen Hinweis
-  („bereit für Firebase-Verbindung“) – eine echte Verbindung gibt es noch nicht.
+- Navigation: `NAV_GROUPS` (Hauptbereich → Unterseiten), `switchGroup(...)` für die
+  Knöpfe unten, `switchTab(...)` für eine Unterseite (Namen wie die Bereiche `tab-...`).
+  Die App öffnet direkt auf `overview` (kein Begrüßungsbildschirm mehr).
+- Ernährung: pro Tag in `nutritionHistoryV2` Einträge `{id, name, kcal, protein, carbs, fat}`
+  (werden zusammengezählt). Ziele in `nutritionGoalsV2`: je Wert `{value, mode}` mit
+  `mode` = `max` („höchstens“ → ✓ solange darunter) oder `min` („mindestens“ → ✓ ab Erreichen).
+  Leeres Ziel = keine Bewertung. Tag wählbar (‹ Heute ›), auch zum Nachtragen.
+- Laufen: Distanz + Zeit („32:15“, „1:05:30“ oder Minuten). `durationMin` wird mit
+  Nachkommastellen gespeichert. Pro Lauf werden Pace (min/km) und km/h berechnet.
+  Tag wählbar (‹ Heute ›), keine Zukunft.
+- **Entfernt am 23.11.2026** (Wunsch des Nutzers, es gab noch keine echten Daten):
+  Wasser-Tracker (`waterV2`/`waterHistoryV2` werden beim Start gelöscht), Sync-Knöpfe und
+  Hinweise auf adidas Running/Yazio/Health Connect, die Fremd-Schnittstelle
+  `FitnessHealthBridge` („fitness-bridge/1“), das Körperfett-Feld.
 
 ### Android-App (Ordner `android/`)
 
@@ -93,10 +103,14 @@ Wichtige Details in `index.html`:
   `REQUEST_INSTALL_PACKAGES`; kein Schlüssel im Code; startet den Java-Test
   `test/UpdateVersionTest.java` (z. B. „app-v1.0.10“ → 10, „10 ist neuer als 9“); fragt zum Schluss
   echt bei GitHub das neueste Release ab (ohne Internet nur Hinweis).
+- `node test/app_test.js` – prüft die Bedienung: 5 Menü-Knöpfe und Unter-Knöpfe, Start auf
+  „Übersicht“, kein Körperfett/Yazio/adidas/Wasser, Lauf-Zeit „32:15“ → Pace/km/h, Nachtragen
+  für gestern, Ernährung mit Zielen (✓/✗), Gewicht, Schritte aus der Android-App
+  (`FitnessNativeApp.onSteps`, Widget-Meldung `reportSteps`), Backup speichern/laden.
 - `node test/update_web.js [Ordner]` – spielt im Browser die Android-App nach: Update-Karte im Profil
   ist in Chrome versteckt, in der App sichtbar mit Version, Knopf ruft die App; alte App ohne
   Update-Funktion → Karte versteckt. Speichert `s-profil-update.png`.
-- Beide laufen automatisch in `bash werkzeuge/pruefen.sh` mit.
+- Alle drei laufen automatisch in `bash werkzeuge/pruefen.sh` mit.
 - `node werkzeuge/screenshots.js [Ordner]` – nur die Bildschirmfotos/Fehlerprüfung.
   Braucht Node und Playwright mit Chromium (in Claudes Cloud-Umgebung vorhanden).
 - Android-App: wird bei jeder Änderung von GitHub gebaut (Workflow oben) – ein
@@ -117,6 +131,15 @@ Wichtige Details in `index.html`:
   - [ ] Nach dem nächsten Update steht unter dem App-Symbol „Fitness-Tracker“ (evtl. „Fitness-Trac…“, wenn zu lang).
 
 ## 3. Regeln und Entscheidungen
+
+- **Grundsatz Körperdaten (23.11.2026): Als Körperwert wird NUR das Gewicht erfasst.**
+  Keine Körpermaße (z. B. Bauchumfang), kein Körperfett, keine Vorher-Nachher-Fotos –
+  weder einbauen noch vorschlagen. Fortschritt wird zusätzlich über Leistung sichtbar
+  (Bestwerte, Serien – kommt mit Teil 3).
+- **Keine Anbindung an fremde Apps** (Yazio, adidas Running o. Ä.). Alles wird von Hand
+  eingetragen; nur die Schritte kommen automatisch aus der eigenen Android-App.
+- Änderungen speichert Claude in diesem Projekt **direkt auf `main`** (Entscheidung des
+  Nutzers, 23.11.2026), trotzdem vorher kurz fragen.
 
 - Alles bleibt in **einer Datei** (`index.html`), damit die App einfach zu öffnen ist.
 - App-Sprache ist Deutsch, dunkles Design in **New-York-Mets-Farben** (Wunsch des
@@ -162,7 +185,36 @@ Wichtige Details in `index.html`:
   einheitlich, nichts umbenannt. Tests in `test/`.
 - 19.11.2026 – Nutzer: Update-Suche funktioniert. Name unter dem App-Symbol „Fitness“ → „Fitness-Tracker“.
 
+- 23.11.2026 – Teil 1 „Aufräumen“: Menü von 10 auf 5 Knöpfe (Heute, Plan, Training,
+  Fortschritt, Profil) mit Unter-Knöpfen; neue Startseite „Übersicht“; Begrüßungsbildschirm
+  weg; Gewicht auf einer Seite zusammengelegt (Fortschritt → Gewicht), Körperfett-Feld weg;
+  Wasser, Sync-Knöpfe und Fremd-Schnittstelle entfernt; Ernährung neu (kcal, Eiweiß,
+  Kohlenhydrate, Fett, Ziele mit ✓/✗, Tag wählbar); Laufen mit Min:Sek, Pace und km/h,
+  Tag wählbar. Neuer Test `test/app_test.js`.
+
+### Test-Liste Teil 1 „Aufräumen“ (zum Abhaken am Handy)
+- [ ] App öffnet direkt auf „Heute → Übersicht“ (kein „Start“-Knopf mehr).
+- [ ] Unten 5 Knöpfe; oben wechseln die Unter-Knöpfe je nach Bereich.
+- [ ] In der Android-App: Schritte erscheinen auf der Übersicht und bei „Schritte“.
+- [ ] Widget zeigt weiter die Schritte (nach ca. 15 Min.).
+- [ ] Ernährung: Ziele eintragen (z. B. höchstens 2000 kcal, mindestens 180 g Eiweiß),
+      Werte eintragen → ✓ grün / ✗ rot stimmt.
+- [ ] Ernährung: mit „‹“ auf gestern wechseln und etwas nachtragen.
+- [ ] Laufen: z. B. 5 km in „30:00“ → Pace 6:00 min/km und 10,0 km/h.
+- [ ] Fortschritt → Gewicht: Gewicht + Zielgewicht speichern, Verlauf erscheint.
+- [ ] Profil → Backup speichern und wieder laden klappt.
+
 ## 5. Offene Ideen / nächste Schritte
+
+- **Auftrag vom 23.11.2026 (Teile nacheinander, nach jedem Teil dem Nutzer zeigen):**
+  - [x] Teil 1 – Aufräumen (Menü, Startseite, Reihenfolge) + Ernährung/Laufen manuell.
+  - [ ] Teil 2 – KI-Trainingsplan („Mein Trainingsplan“): Profil (nur lokal), Plan 1 oder
+        2 Wochen über die Claude-API (Schlüssel gibt der Nutzer in der App ein, nur lokal),
+        Wochen-Schwerpunkte, Einheiten abhaken mit Schwierigkeit/Wiederholungen, Check-in.
+  - [ ] Teil 3 – Motivation: Serie mit Ruhetagen, Etappenziele (alle 2–3 kg) mit Feier,
+        Bestwerte + „Neuer Rekord!“, KI-Wochenrückblick, 10-Min-Mini-Einheit,
+        „heute ohne Süßes“-Serie, Erinnerungen über die Android-App.
+  - [ ] Teil 4 – Export/Import aller neuen Daten.
 
 - **Update-Suche am Handy testen** (Test-Liste oben). Ungetestet sind: Fenster/Meldungen der App,
   Download im Browser, Installation über die alte Version – das geht nur am echten Handy.
@@ -184,7 +236,6 @@ Wichtige Details in `index.html`:
     (localStorage ist pro Webseite/App getrennt).
   - Schätzung: Claude bereitet vor (ca. 1–2 Std., ohne Nutzer); Nutzer braucht
     ca. 30–45 Min. zum Installieren und Testen, evtl. 1–2 kurze Korrekturrunden.
-- Echte Anbindung für adidas Running / Yazio (aktuell nur Import per Datei).
 
 ## 6. Hinweise zur Zusammenarbeit
 

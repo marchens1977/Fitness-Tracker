@@ -24,70 +24,11 @@
             line-height: 1.45;
         }
 
-        /* Startseite */
-        .welcome-screen {
-            min-height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 32px 24px;
-            background: radial-gradient(circle at top, #1d2f5c 0%, #0e1324 65%);
-        }
-
-        .welcome-logo {
-            width: 84px;
-            height: 84px;
-            border-radius: 24px;
-            background: #161e30;
-            border: 2px solid #ff5910;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 38px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 30px rgba(255, 89, 16, 0.18);
-        }
-
-        .welcome-title {
-            font-size: 1.9rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin: 0 0 10px 0;
-        }
-
-        .welcome-subtitle {
-            font-size: 1rem;
-            color: #a8a8a8;
-            max-width: 340px;
-            margin: 0 0 36px 0;
-        }
-
-        .welcome-start-btn {
-            width: 100%;
-            max-width: 280px;
-            min-height: 56px;
-            font-size: 1.15rem;
-            font-weight: 700;
-            border-radius: 16px;
-            background: #ff5910;
-            color: #000412;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(255, 89, 16, 0.3);
-        }
-
-        .welcome-start-btn:active {
-            transform: scale(0.98);
-        }
-
-        /* App-Container */
         .app-shell {
-            display: none;
+            display: block;
             max-width: 540px;
             margin: 0 auto;
-            padding: 12px 12px calc(128px + env(safe-area-inset-bottom)) 12px;
+            padding: 12px 12px calc(84px + env(safe-area-inset-bottom)) 12px;
         }
 
         .top-bar {
@@ -789,6 +730,60 @@
         }
 
         /* Untere Navigation (10 Reiter in 2 Fünferreihen) */
+        /* Unter-Knöpfe (Unterseiten eines Hauptbereichs) */
+        .sub-nav {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: #0e1324;
+            padding-top: 4px;
+            margin-bottom: 6px;
+        }
+
+        .sub-nav:empty {
+            display: none;
+        }
+
+        /* Ziel-Zeilen (Ernährung): grüner Haken / rotes X */
+        .goal-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 9px 10px;
+            margin-top: 6px;
+            background: #151c2f;
+            border: 1px solid #232c41;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        .goal-row .goal-name { color: #fff; font-weight: 600; }
+        .goal-row .goal-value { color: #cfd6e6; text-align: right; }
+        .goal-mark { font-weight: 800; font-size: 1.05rem; min-width: 22px; text-align: center; }
+        .goal-mark.ok { color: #3ddc84; }
+        .goal-mark.bad { color: #ff4d4d; }
+        .goal-mark.none { color: #5c6680; }
+
+        .goal-edit-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            align-items: end;
+        }
+
+        .goal-edit-grid select, .goal-edit-grid input { margin-bottom: 0; }
+
+        /* Schnell-Knöpfe auf der Übersicht */
+        .quick-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .quick-grid button { margin-top: 0; }
+
+        /* Unten: Navigationsleiste */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -863,22 +858,68 @@
 <body>
 
 <!-- STARTSEITE -->
-<section class="welcome-screen" id="welcomeScreen">
-    <div class="welcome-logo">💪</div>
-    <h1 class="welcome-title">Mein Fitness-Tracker</h1>
-    <p class="welcome-subtitle">Krafttraining, Cardiotraining, Bodyweight, Dehnen & Stretching, Schritte, Laufen, Ernährung, Statistik und Archiv.</p>
-    <button type="button" class="welcome-start-btn" onclick="startApp()">Start</button>
-</section>
-
 <!-- HAUPT-APP -->
 <div class="app-shell" id="appShell">
     <div class="top-bar">
-        <h1 class="top-bar-title" id="topHeaderTitle">Studio – Krafttraining</h1>
-        <button type="button" class="home-btn" onclick="showWelcome()">Startseite</button>
+        <h1 class="top-bar-title" id="topHeaderTitle">Heute</h1>
     </div>
 
+    <!-- Unter-Knöpfe des gewählten Hauptbereichs (werden per JavaScript gefüllt) -->
+    <div class="chip-row sub-nav" id="subNav"></div>
+
+    <!-- HEUTE: ÜBERSICHT (Startseite) -->
+    <section class="tab-panel active" id="tab-overview">
+        <div class="card">
+            <h2>Schritte heute</h2>
+            <div class="hero-box">
+                <div class="hero-box-value"><span id="ovStepsCount">0</span> / <span id="ovStepsGoal">10.000</span></div>
+                <div class="hero-box-sub" id="ovStepsText">Noch 10.000 Schritte bis zum Tagesziel</div>
+                <div class="progress-track" style="margin-top: 12px; margin-bottom: 4px;">
+                    <div class="progress-fill" id="ovStepsBar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Deine Serie</h2>
+            <div class="stats-grid two">
+                <div class="stat-box">
+                    <span class="stat-label">Aktuelle Serie</span>
+                    <span class="stat-value" style="color: #ff5910;" id="ovStreak">0 Tage</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Gewicht</span>
+                    <span class="stat-value" id="ovWeight">- kg</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Ernährung heute</h2>
+            <div id="ovNutritionGoals"></div>
+        </div>
+
+        <div class="card">
+            <h2>Eintragen</h2>
+            <div class="quick-grid">
+                <button type="button" onclick="switchTab('gym-strength')">🏋️ Training</button>
+                <button type="button" class="btn-blue" onclick="switchTab('running')">🏃 Lauf</button>
+                <button type="button" class="btn-secondary" onclick="switchTab('nutrition')">🥗 Ernährung</button>
+                <button type="button" class="btn-secondary" onclick="switchTab('weight')">⚖️ Gewicht</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- PLAN: MEIN TRAININGSPLAN (kommt in Teil 2) -->
+    <section class="tab-panel" id="tab-plan">
+        <div class="card">
+            <h2>Mein Trainingsplan</h2>
+            <p class="muted">Hier entsteht bald dein persönlicher Trainingsplan (1 oder 2 Wochen), den die KI aus deinem Profil und deinen Wünschen erstellt.</p>
+        </div>
+    </section>
+
     <!-- REITER 1: FITNESSSTUDIO KRAFTTRAINING -->
-    <section class="tab-panel active" id="tab-gym-strength">
+    <section class="tab-panel" id="tab-gym-strength">
         <div class="card">
             <div class="date-nav">
                 <button type="button" class="step-btn" onclick="shiftGymStrengthDate(-1)" aria-label="Vorheriger Tag">‹</button>
@@ -1091,13 +1132,13 @@
     <!-- REITER 4: SCHRITTZÄHLER -->
     <section class="tab-panel" id="tab-steps">
         <div class="card">
-            <h2>Telefon-Schrittzähler & Sync</h2>
+            <h2>Handy-Schrittzähler</h2>
             <div class="sync-banner">
                 <div>
                     <div style="font-size: 0.9rem; font-weight: 600; color: #fff;">
-                        <span class="sync-dot" id="stepsSensorDot"></span><span id="stepsSensorTitle">Bewegungssensor & Health Sync</span>
+                        <span class="sync-dot" id="stepsSensorDot"></span><span id="stepsSensorTitle">Live-Zähler im Browser</span>
                     </div>
-                    <div class="muted" id="stepsSensorStatus" style="font-size: 0.78rem;">Bereit für Google Health Connect oder Live-Zählung im Browser.</div>
+                    <div class="muted" id="stepsSensorStatus" style="font-size: 0.78rem;">Zählt nur, solange die Seite offen ist. In der Android-App zählt der Handy-Chip automatisch.</div>
                 </div>
                 <button type="button" class="sync-btn-small" id="stepsSensorBtn" onclick="toggleMotionStepCounter()">Live-Zähler</button>
             </div>
@@ -1152,17 +1193,7 @@
     <!-- REITER 5: LAUFEN -->
     <section class="tab-panel" id="tab-running">
         <div class="card">
-            <h2>adidas Running Schnittstelle</h2>
-            <div class="sync-banner">
-                <div>
-                    <div style="font-size: 0.9rem; font-weight: 600; color: #fff;">
-                        <span class="sync-dot"></span>Bereit für Google Health Sync
-                    </div>
-                    <div class="muted" id="runSyncStatusText" style="font-size: 0.78rem;">Läufe werden nach Firebase-Kopplung automatisch geladen.</div>
-                </div>
-                <button type="button" class="sync-btn-small" onclick="triggerSyncCheck('adidas Running')">Sync</button>
-            </div>
-
+            <h2>Deine Läufe</h2>
             <div class="stats-grid">
                 <div class="stat-box">
                     <span class="stat-label">Dieser Monat</span>
@@ -1181,6 +1212,11 @@
 
         <div class="card">
             <h2>Lauf eintragen</h2>
+            <div class="date-nav">
+                <button type="button" class="step-btn" onclick="shiftRunDate(-1)" aria-label="Vorheriger Tag">‹</button>
+                <span class="date-label" id="runDateLabel">Heute</span>
+                <button type="button" class="step-btn" onclick="shiftRunDate(1)" aria-label="Nächster Tag">›</button>
+            </div>
             <div class="prev-session-box" id="runPrevBox" style="margin-bottom: 10px;">
                 <div class="prev-session-top">
                     <span class="prev-session-title" id="runPrevTitle">Letzter Lauf als Referenz</span>
@@ -1193,10 +1229,11 @@
                     <input type="text" id="runDistanceInput" inputmode="decimal" placeholder="z. B. 5,2">
                 </div>
                 <div>
-                    <label class="field-label" for="runDurationInput">Dauer (Minuten)</label>
-                    <input type="number" id="runDurationInput" inputmode="numeric" min="1" max="1000" placeholder="z. B. 32">
+                    <label class="field-label" for="runDurationInput">Zeit (Min:Sek)</label>
+                    <input type="text" id="runDurationInput" inputmode="decimal" placeholder="z. B. 32:15">
                 </div>
             </div>
+            <p class="muted" id="runLivePreview" style="font-size: 0.82rem; margin: 0 0 6px 0;">Pace und km/h werden automatisch berechnet.</p>
             <button type="button" onclick="addManualRun()">Lauf speichern</button>
         </div>
 
@@ -1209,59 +1246,48 @@
     <!-- REITER 6: ERNÄHRUNG -->
     <section class="tab-panel" id="tab-nutrition">
         <div class="card">
-            <h2>Yazio Schnittstelle</h2>
-            <div class="sync-banner">
-                <div>
-                    <div style="font-size: 0.9rem; font-weight: 600; color: #fff;">
-                        <span class="sync-dot"></span>Bereit für Google Health Sync
-                    </div>
-                    <div class="muted" id="nutSyncStatusText" style="font-size: 0.78rem;">Kalorien und Makros aus Yazio laufen hier zusammen.</div>
-                </div>
-                <button type="button" class="sync-btn-small" onclick="triggerSyncCheck('Yazio')">Sync</button>
+            <div class="date-nav">
+                <button type="button" class="step-btn" onclick="shiftNutritionDate(-1)" aria-label="Vorheriger Tag">‹</button>
+                <span class="date-label" id="nutDateLabel">Heute</span>
+                <button type="button" class="step-btn" onclick="shiftNutritionDate(1)" aria-label="Nächster Tag">›</button>
             </div>
-
-            <div class="stats-grid two">
-                <div class="stat-box">
-                    <span class="stat-label">Kalorien heute</span>
-                    <span class="stat-value"><span id="nutTodayKcal">0</span> / <span id="nutGoalKcal">2100</span></span>
-                </div>
-                <div class="stat-box">
-                    <span class="stat-label">Eiweiß heute</span>
-                    <span class="stat-value"><span id="nutTodayProtein">0</span> / <span id="nutGoalProtein">160</span> g</span>
-                </div>
-            </div>
-            <div class="progress-track">
-                <div class="progress-fill" id="nutKcalBar"></div>
-            </div>
-            <div class="progress-track">
-                <div class="progress-fill purple" id="nutProteinBar"></div>
-            </div>
+            <h2>Tagesbilanz</h2>
+            <div id="nutGoalRows"></div>
         </div>
 
         <div class="card">
-            <h2>Mahlzeit ergänzen</h2>
-            <input type="text" id="nutMealName" placeholder="Mahlzeit oder Notiz (optional)">
+            <h2>Werte eintragen</h2>
+            <p class="muted" style="font-size: 0.82rem; margin-top: 0;">Alle Felder sind freiwillig. Mehrere Einträge am Tag werden zusammengezählt.</p>
+            <input type="text" id="nutMealName" placeholder="Notiz (optional), z. B. Abendessen">
             <div class="input-split">
-                <input type="number" id="nutKcalInput" inputmode="numeric" placeholder="Kalorien (kcal)">
-                <input type="number" id="nutProteinInput" inputmode="numeric" placeholder="Eiweiß (g)">
+                <div>
+                    <label class="field-label" for="nutKcalInput">Kalorien (kcal)</label>
+                    <input type="text" id="nutKcalInput" inputmode="decimal" placeholder="z. B. 650">
+                </div>
+                <div>
+                    <label class="field-label" for="nutProteinInput">Eiweiß (g)</label>
+                    <input type="text" id="nutProteinInput" inputmode="decimal" placeholder="z. B. 45">
+                </div>
             </div>
-            <div class="btn-row">
-                <button type="button" onclick="addNutritionEntry()">Hinzufügen</button>
-                <button type="button" class="btn-secondary" onclick="resetNutritionToday()">Heute auf 0</button>
+            <div class="input-split">
+                <div>
+                    <label class="field-label" for="nutCarbsInput">Kohlenhydrate (g)</label>
+                    <input type="text" id="nutCarbsInput" inputmode="decimal" placeholder="z. B. 70">
+                </div>
+                <div>
+                    <label class="field-label" for="nutFatInput">Fett (g)</label>
+                    <input type="text" id="nutFatInput" inputmode="decimal" placeholder="z. B. 20">
+                </div>
             </div>
+            <button type="button" onclick="addNutritionEntry()">Hinzufügen</button>
             <div id="nutEntriesList" style="margin-top: 12px;"></div>
         </div>
 
         <div class="card">
-            <h2>Wasser-Tracker</h2>
-            <p class="muted">Heute: <strong style="color:#fff;" id="waterCount">0</strong> / 12 Gläser (<span id="waterLiters">0,00</span> L)</p>
-            <div class="progress-track">
-                <div class="progress-fill blue" id="waterBar"></div>
-            </div>
-            <div class="btn-row">
-                <button type="button" class="btn-blue" onclick="updateWater(1)">+ 250 ml Glas</button>
-                <button type="button" class="btn-secondary" onclick="updateWater(-1)">- Glas</button>
-            </div>
+            <h2>Meine Tagesziele</h2>
+            <p class="muted" style="font-size: 0.82rem; margin-top: 0;">„Höchstens“: grüner Haken, solange du darunter bleibst. „Mindestens“: grüner Haken, sobald du es erreichst. Leeres Feld = ohne Bewertung.</p>
+            <div id="nutGoalEditor"></div>
+            <button type="button" class="btn-secondary" onclick="saveNutritionGoals()">Ziele speichern</button>
         </div>
     </section>
 
@@ -1398,39 +1424,6 @@
         </div>
 
         <div class="card">
-            <h2>Waage & Gewichtsziel</h2>
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <span class="stat-label">Aktuell</span>
-                    <span class="stat-value" id="motCurrentWeight">- kg</span>
-                </div>
-                <div class="stat-box">
-                    <span class="stat-label">Ziel</span>
-                    <span class="stat-value" id="motTargetWeight">75,0 kg</span>
-                </div>
-                <div class="stat-box">
-                    <span class="stat-label">Rest</span>
-                    <span class="stat-value" id="motDiffWeight">- kg</span>
-                </div>
-            </div>
-
-            <div class="chart-wrap" id="motWeightChartWrap">
-                <canvas id="motWeightChartCanvas" class="chart-canvas"></canvas>
-                <div class="chart-legend">
-                    <span><span class="legend-dot" style="background:#ff5910;"></span>Gewicht</span>
-                    <span><span class="legend-dot" style="background:#6e9bff;"></span>Zielgewicht</span>
-                    <span id="motWeightDeltaLabel" style="color:#ff5910; font-weight:600;"></span>
-                </div>
-            </div>
-
-            <div class="input-split" style="margin-top: 12px;">
-                <input type="text" id="motWeightInput" inputmode="decimal" placeholder="Gewicht (kg)">
-                <input type="text" id="motGoalWeightInput" inputmode="decimal" placeholder="Zielgewicht (kg)">
-            </div>
-            <button type="button" onclick="saveMotivationWeight()">Gewicht & Ziel speichern</button>
-        </div>
-
-        <div class="card">
             <h2>Mein persönliches Warum</h2>
             <textarea id="personalWhyInput" placeholder="Warum ziehst du das durch? Schreib deinen eigenen Antrieb hier hinein..."></textarea>
             <button type="button" class="btn-secondary" onclick="savePersonalWhy()">Leitsatz speichern</button>
@@ -1444,22 +1437,22 @@
         </div>
     </section>
 
-    <!-- REITER 9: PERSÖNLICHE DATEN & GEWICHT -->
-    <section class="tab-panel" id="tab-profile">
+    <!-- FORTSCHRITT: GEWICHT (nur Gewicht, keine Körpermaße) -->
+    <section class="tab-panel" id="tab-weight">
         <div class="card">
-            <h2>Gewichtsverlauf & Körperwerte</h2>
+            <h2>Gewicht & Zielgewicht</h2>
             <div class="stats-grid">
                 <div class="stat-box">
-                    <span class="stat-label">Gewicht</span>
+                    <span class="stat-label">Aktuell</span>
                     <span class="stat-value" id="profCurrentWeight">- kg</span>
                 </div>
                 <div class="stat-box">
-                    <span class="stat-label">Körperfett</span>
-                    <span class="stat-value" id="profBodyFat">- %</span>
+                    <span class="stat-label">Ziel</span>
+                    <span class="stat-value" id="profGoalWeight">- kg</span>
                 </div>
                 <div class="stat-box">
-                    <span class="stat-label">Zielgewicht</span>
-                    <span class="stat-value" id="profGoalWeight">75,0 kg</span>
+                    <span class="stat-label">Rest</span>
+                    <span class="stat-value" id="profDiffWeight">- kg</span>
                 </div>
             </div>
 
@@ -1474,24 +1467,23 @@
 
             <div class="input-split" style="margin-top: 12px;">
                 <div>
-                    <label class="field-label" for="profWeightInput">Gewicht (kg)</label>
+                    <label class="field-label" for="profWeightInput">Gewicht heute (kg)</label>
                     <input type="text" id="profWeightInput" inputmode="decimal" placeholder="z. B. 84,5">
                 </div>
                 <div>
-                    <label class="field-label" for="profBodyFatInput">Körperfett (%)</label>
-                    <input type="text" id="profBodyFatInput" inputmode="decimal" placeholder="z. B. 21,5">
+                    <label class="field-label" for="profGoalWeightInput">Zielgewicht (kg)</label>
+                    <input type="text" id="profGoalWeightInput" inputmode="decimal" placeholder="z. B. 75,0">
                 </div>
             </div>
+            <button type="button" onclick="saveProfileMetrics()">Gewicht speichern</button>
 
-            <label class="field-label" for="profGoalWeightInput">Zielgewicht (kg)</label>
-            <input type="text" id="profGoalWeightInput" inputmode="decimal" placeholder="z. B. 75,0">
-
-            <button type="button" onclick="saveProfileMetrics()">Körperwerte speichern</button>
-
-            <h3>Verlauf der Messungen</h3>
+            <h3>Verlauf</h3>
             <div id="bodyMetricsHistoryList"></div>
         </div>
+    </section>
 
+    <!-- PROFIL -->
+    <section class="tab-panel" id="tab-profile">
         <div class="card">
             <h2>Alter & Geburtsdatum</h2>
             <div class="hero-box">
@@ -1505,7 +1497,7 @@
 
         <div class="card">
             <h2>Datensicherung</h2>
-            <p class="muted" style="margin-bottom: 10px;">Sichere alle Trainings-, Schritt-, Ernährungs- und Körperdaten als Datei auf deinem Smartphone.</p>
+            <p class="muted" style="margin-bottom: 10px;">Sichere alle Trainings-, Schritt-, Ernährungs- und Gewichtsdaten als Datei auf deinem Smartphone.</p>
             <div class="btn-row">
                 <button type="button" class="btn-purple" onclick="exportBackup()">Backup speichern</button>
                 <button type="button" class="btn-secondary" onclick="triggerImport()">Backup laden</button>
@@ -1521,45 +1513,25 @@
         </div>
     </section>
 
-    <!-- FESTE NAVIGATION UNTEN (9 REITER IN 3 DREIERREIHEN) -->
+    <!-- FESTE NAVIGATION UNTEN (5 HAUPTBEREICHE) -->
     <nav class="bottom-nav" aria-label="Hauptnavigation">
-        <button type="button" class="nav-item active" data-tab="gym-strength" onclick="switchTab('gym-strength')">
+        <button type="button" class="nav-item active" data-group="heute" onclick="switchGroup('heute')">
+            <span class="nav-icon">🏠</span>
+            <span>Heute</span>
+        </button>
+        <button type="button" class="nav-item" data-group="plan" onclick="switchGroup('plan')">
+            <span class="nav-icon">📋</span>
+            <span>Plan</span>
+        </button>
+        <button type="button" class="nav-item" data-group="training" onclick="switchGroup('training')">
             <span class="nav-icon">🏋️</span>
-            <span>Studio Kraft</span>
+            <span>Training</span>
         </button>
-        <button type="button" class="nav-item" data-tab="gym-cardio" onclick="switchTab('gym-cardio')">
-            <span class="nav-icon">🚴</span>
-            <span>Studio Cardio</span>
+        <button type="button" class="nav-item" data-group="fortschritt" onclick="switchGroup('fortschritt')">
+            <span class="nav-icon">📈</span>
+            <span>Fortschritt</span>
         </button>
-        <button type="button" class="nav-item" data-tab="bodyweight" onclick="switchTab('bodyweight')">
-            <span class="nav-icon">🤸</span>
-            <span>Bodyweight</span>
-        </button>
-        <button type="button" class="nav-item" data-tab="stretching" onclick="switchTab('stretching')">
-            <span class="nav-icon">🧘</span>
-            <span>Dehnen</span>
-        </button>
-        <button type="button" class="nav-item" data-tab="steps" onclick="switchTab('steps')">
-            <span class="nav-icon">👟</span>
-            <span>Schritte</span>
-        </button>
-        <button type="button" class="nav-item" data-tab="running" onclick="switchTab('running')">
-            <span class="nav-icon">🏃</span>
-            <span>Laufen</span>
-        </button>
-        <button type="button" class="nav-item" data-tab="nutrition" onclick="switchTab('nutrition')">
-            <span class="nav-icon">🥗</span>
-            <span>Ernährung</span>
-        </button>
-        <button type="button" class="nav-item" data-tab="stats" onclick="switchTab('stats')">
-            <span class="nav-icon">📊</span>
-            <span>Statistik</span>
-        </button>
-        <button type="button" class="nav-item" data-tab="motivation" onclick="switchTab('motivation')">
-            <span class="nav-icon">🔥</span>
-            <span>Motivation</span>
-        </button>
-        <button type="button" class="nav-item" data-tab="profile" onclick="switchTab('profile')">
+        <button type="button" class="nav-item" data-group="profil" onclick="switchGroup('profil')">
             <span class="nav-icon">👤</span>
             <span>Profil</span>
         </button>
@@ -1741,6 +1713,9 @@
     ];
 
     const TAB_TITLES = {
+        'overview': 'Heute',
+        'plan': 'Mein Trainingsplan',
+        'weight': 'Gewicht',
         'gym-strength': 'Studio – Krafttraining',
         'gym-cardio': 'Studio – Cardiotraining',
         'bodyweight': 'Bodyweight Training',
@@ -1750,8 +1725,19 @@
         'nutrition': 'Ernährung',
         'stats': 'Statistik & Archiv',
         'motivation': 'Motivation & Ziele',
-        'profile': 'Profil & Gewichtsverlauf'
+        'profile': 'Profil'
     };
+
+    // 5 Hauptbereiche unten; jeder hat Unterseiten (Unter-Knöpfe oben).
+    // Die Unterseiten heißen wie die bisherigen Reiter (tab-...), damit nichts verloren geht.
+    const NAV_GROUPS = {
+        heute: [['overview', 'Übersicht'], ['steps', 'Schritte'], ['nutrition', 'Ernährung']],
+        plan: [['plan', 'Trainingsplan']],
+        training: [['gym-strength', 'Kraft'], ['gym-cardio', 'Cardio'], ['bodyweight', 'Bodyweight'], ['running', 'Laufen'], ['stretching', 'Dehnen']],
+        fortschritt: [['motivation', 'Motivation'], ['weight', 'Gewicht'], ['stats', 'Statistik']],
+        profil: [['profile', 'Profil']]
+    };
+    const lastTabOfGroup = {};
 
     const DEFAULT_STEP_GOAL = 10000;
 
@@ -1760,6 +1746,8 @@
     let selectedBwDate = getLocalDateKey();
     let selectedStretchDate = getLocalDateKey();
     let selectedArchiveDate = getLocalDateKey();
+    let selectedRunDate = getLocalDateKey();
+    let selectedNutritionDate = getLocalDateKey();
     let activeGymStrengthCategory = 'all';
     let activeBwCategory = 'all';
     let activeStretchCategory = 'all';
@@ -1902,42 +1890,66 @@
             }
         } catch (e) {}
 
-        try {
-            const waterRaw = JSON.parse(localStorage.getItem('waterV2'));
-            if (waterRaw && waterRaw.date && typeof waterRaw.count === 'number' && waterRaw.count > 0) {
-                const waterHist = getWaterHistory();
-                if (!(waterHist[waterRaw.date] > 0)) {
-                    waterHist[waterRaw.date] = waterRaw.count;
-                    localStorage.setItem('waterHistoryV2', JSON.stringify(waterHist));
-                }
-            }
-        } catch (e) {}
+        // Wasser-Tracker wurde entfernt (Wunsch des Nutzers, 23.11.2026)
+        localStorage.removeItem('waterV2');
+        localStorage.removeItem('waterHistoryV2');
     }
 
-    /* Navigation Startseite & Reiter */
+    /* Navigation: Hauptbereiche (unten) & Unterseiten (oben) */
+    function getGroupOfTab(tabKey) {
+        return Object.keys(NAV_GROUPS).find(g => NAV_GROUPS[g].some(([k]) => k === tabKey)) || 'heute';
+    }
+
+    // Für ältere Aufrufe (früher gab es einen Begrüßungsbildschirm)
     function startApp() {
-        document.getElementById('welcomeScreen').style.display = 'none';
-        document.getElementById('appShell').style.display = 'block';
         initApp();
     }
 
-    function showWelcome() {
-        document.getElementById('appShell').style.display = 'none';
-        document.getElementById('welcomeScreen').style.display = 'flex';
+    function switchGroup(group) {
+        const tabs = NAV_GROUPS[group];
+        if (!tabs) return;
+        switchTab(lastTabOfGroup[group] || tabs[0][0]);
+    }
+
+    function renderSubNav(group, tabKey) {
+        const bar = document.getElementById('subNav');
+        bar.innerHTML = '';
+        const tabs = NAV_GROUPS[group];
+        if (!tabs || tabs.length < 2) return;
+        tabs.forEach(([key, label]) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'chip' + (key === tabKey ? ' active' : '');
+            b.dataset.tab = key;
+            b.textContent = label;
+            b.onclick = () => switchTab(key);
+            bar.appendChild(b);
+            if (key === tabKey) {
+                const active = b;
+                requestAnimationFrame(() => {
+                    bar.scrollLeft = Math.max(0, active.offsetLeft - (bar.clientWidth - active.offsetWidth) / 2);
+                });
+            }
+        });
     }
 
     function switchTab(tabKey) {
         if (appDayKey !== getLocalDateKey()) {
             initApp();
         }
+        if (!document.getElementById(`tab-${tabKey}`)) tabKey = 'overview';
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         document.getElementById(`tab-${tabKey}`).classList.add('active');
 
+        const group = getGroupOfTab(tabKey);
+        lastTabOfGroup[group] = tabKey;
         document.querySelectorAll('.nav-item').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tab === tabKey);
+            btn.classList.toggle('active', btn.dataset.group === group);
         });
+        renderSubNav(group, tabKey);
 
         document.getElementById('topHeaderTitle').textContent = TAB_TITLES[tabKey] || 'Fitness';
+        window.scrollTo(0, 0);
 
         if (tabKey === 'gym-strength') {
             onGymStrengthExerciseChange();
@@ -1959,11 +1971,14 @@
             renderMotivation();
         } else if (tabKey === 'profile') {
             renderProfile();
+        } else if (tabKey === 'weight') {
+            renderWeightPage();
         } else if (tabKey === 'steps') {
             renderSteps();
         } else if (tabKey === 'nutrition') {
             renderNutrition();
-            renderWater();
+        } else if (tabKey === 'overview') {
+            renderOverview();
         }
     }
 
@@ -3733,7 +3748,7 @@
         const status = document.getElementById('stepsSensorStatus');
 
         if (motionSensorActive) {
-            stopMotionStepCounter('Live-Zähler pausiert. Bereit für Google Health Connect Sync.');
+            stopMotionStepCounter('Live-Zähler pausiert.');
             showToast('Live-Schrittzähler gestoppt.');
             return;
         }
@@ -3841,9 +3856,31 @@
             row.append(left, right);
             list.appendChild(row);
         }
+        renderOverview();
     }
 
-    /* REITER 5: LAUFEN (ADIDAS RUNNING) */
+    /* HEUTE: ÜBERSICHT (Startseite) */
+    function renderOverview() {
+        const today = getLocalDateKey();
+        const steps = getStepsForDate(today);
+        const goal = getStepGoal();
+        const diff = steps - goal;
+        document.getElementById('ovStepsCount').textContent = formatInt(steps);
+        document.getElementById('ovStepsGoal').textContent = formatInt(goal);
+        document.getElementById('ovStepsBar').style.width = `${Math.min(100, Math.round((steps / goal) * 100))}%`;
+        const txt = document.getElementById('ovStepsText');
+        txt.textContent = diff >= 0 ? `Tagesziel erreicht! +${formatInt(diff)} Schritte` : `Noch ${formatInt(-diff)} Schritte bis zum Tagesziel`;
+        txt.style.color = diff >= 0 ? '#ff5910' : '#b0b0b0';
+
+        const streak = calculateStreaks().current;
+        document.getElementById('ovStreak').textContent = streak === 1 ? '1 Tag' : `${streak} Tage`;
+        const curW = parseFloat(localStorage.getItem('userWeightV2'));
+        document.getElementById('ovWeight').textContent = !isNaN(curW) ? `${curW.toFixed(1).replace('.', ',')} kg` : '- kg';
+
+        renderNutritionGoalRows(document.getElementById('ovNutritionGoals'), getNutritionTotals(today), true);
+    }
+
+    /* TRAINING: LAUFEN (manuell eintragen) */
     function getRuns() {
         try {
             const list = JSON.parse(localStorage.getItem('runningLogsV2'));
@@ -3854,27 +3891,81 @@
         }
     }
 
+    // Zeit-Eingabe lesen: "32:15" (Min:Sek), "1:05:30" (Std:Min:Sek) oder "32" bzw. "32,5" (Minuten)
+    function parseRunDuration(raw) {
+        const v = String(raw || '').trim().replace(/\s/g, '');
+        if (!v) return NaN;
+        if (/^\d+:\d{1,2}:\d{1,2}$/.test(v)) {
+            const [h, m, sec] = v.split(':').map(Number);
+            if (m > 59 || sec > 59) return NaN;
+            return h * 60 + m + sec / 60;
+        }
+        if (/^\d+:\d{1,2}$/.test(v)) {
+            const [m, sec] = v.split(':').map(Number);
+            if (sec > 59) return NaN;
+            return m + sec / 60;
+        }
+        if (/^\d+([.,]\d+)?$/.test(v)) return parseDecimal(v);
+        return NaN;
+    }
+
+    // Minuten (auch mit Nachkommastellen) als "32:15" bzw. "1:05:30" anzeigen
+    function formatRunDuration(durationMin) {
+        const totalSec = Math.round((Number(durationMin) || 0) * 60);
+        const h = Math.floor(totalSec / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        const sec = totalSec % 60;
+        if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')} h`;
+        return `${m}:${String(sec).padStart(2, '0')} min`;
+    }
+
+    function formatSpeed(distKm, durationMin) {
+        if (!distKm || !durationMin || durationMin <= 0) return '- km/h';
+        return `${(distKm / (durationMin / 60)).toFixed(1).replace('.', ',')} km/h`;
+    }
+
+    function shiftRunDate(delta) {
+        const next = shiftDateKey(selectedRunDate, delta);
+        if (next > getLocalDateKey()) return;
+        selectedRunDate = next;
+        renderRuns();
+    }
+
+    function updateRunPreview() {
+        const dist = parseDecimal(document.getElementById('runDistanceInput').value);
+        const dur = parseRunDuration(document.getElementById('runDurationInput').value);
+        const el = document.getElementById('runLivePreview');
+        if (!isNaN(dist) && dist > 0 && !isNaN(dur) && dur > 0) {
+            el.textContent = `Pace ${formatPace(dist, dur)} · ${formatSpeed(dist, dur)}`;
+            el.style.color = '#ff5910';
+        } else {
+            el.textContent = 'Pace und km/h werden automatisch berechnet.';
+            el.style.color = '';
+        }
+    }
+
     function addManualRun() {
         const dist = parseDecimal(document.getElementById('runDistanceInput').value);
-        const dur = parseInt(document.getElementById('runDurationInput').value, 10);
+        const dur = parseRunDuration(document.getElementById('runDurationInput').value);
 
         if (isNaN(dist) || dist <= 0 || dist > 200) {
             showToast('Bitte gültige Distanz in km eingeben.');
             return;
         }
-        if (isNaN(dur) || dur <= 0 || dur > 1000) {
-            showToast('Bitte gültige Dauer in Minuten eingeben.');
+        if (isNaN(dur) || dur <= 0 || dur > 1440) {
+            showToast('Bitte Zeit eingeben, z. B. 32:15 (Min:Sek).');
             return;
         }
 
+        const day = selectedRunDate;
         const runs = getRuns();
-        const prevRun = runs.length > 0 ? runs[runs.length - 1] : null;
-        const today = getLocalDateKey();
+        const earlier = runs.filter(r => r.date <= day);
+        const prevRun = earlier.length > 0 ? earlier[earlier.length - 1] : null;
         const newRun = {
             id: `run_${Date.now()}`,
-            date: today,
+            date: day,
             distanceKm: Number(dist.toFixed(2)),
-            durationMin: dur,
+            durationMin: Number(dur.toFixed(4)),
             source: 'Manuell'
         };
         runs.push(newRun);
@@ -3882,14 +3973,16 @@
         localStorage.setItem('runningLogsV2', JSON.stringify(runs));
         document.getElementById('runDistanceInput').value = '';
         document.getElementById('runDurationInput').value = '';
-        markDateActive(today);
+        updateRunPreview();
+        markDateActive(day);
         renderRuns();
+        renderOverview();
 
+        const info = `Pace ${formatPace(newRun.distanceKm, newRun.durationMin)} · ${formatSpeed(newRun.distanceKm, newRun.durationMin)}`;
         if (prevRun) {
-            const delta = evaluateRunDelta(newRun, prevRun);
-            showToast(delta.text);
+            showToast(`${info} – ${evaluateRunDelta(newRun, prevRun).text}`);
         } else {
-            showToast('Lauf gespeichert.');
+            showToast(`Lauf gespeichert: ${info}`);
         }
     }
 
@@ -3899,6 +3992,7 @@
         localStorage.setItem('runningLogsV2', JSON.stringify(runs));
         if (removed) unmarkDateIfEmpty(removed.date);
         renderRuns();
+        renderOverview();
         showToast('Lauf entfernt.');
     }
 
@@ -3951,6 +4045,7 @@
 
     function renderRuns() {
         const runs = getRuns();
+        document.getElementById('runDateLabel').textContent = formatDisplayDate(selectedRunDate);
         const currentMonthPrefix = getLocalDateKey().slice(0, 7);
 
         let totalKm = 0;
@@ -3980,11 +4075,14 @@
             p1.textContent = `${String(lastRun.distanceKm).replace('.', ',')} km`;
             const p2 = document.createElement('span');
             p2.className = 'prev-pill active-target';
-            p2.textContent = `${lastRun.durationMin} Min.`;
+            p2.textContent = formatRunDuration(lastRun.durationMin);
             const p3 = document.createElement('span');
             p3.className = 'prev-pill';
             p3.textContent = formatPace(lastRun.distanceKm, lastRun.durationMin);
-            refDetails.append(p1, p2, p3);
+            const p4 = document.createElement('span');
+            p4.className = 'prev-pill';
+            p4.textContent = formatSpeed(lastRun.distanceKm, lastRun.durationMin);
+            refDetails.append(p1, p2, p3, p4);
         } else {
             refTitle.textContent = 'Noch kein Lauf gespeichert';
             const info = document.createElement('span');
@@ -4021,7 +4119,7 @@
             badge.textContent = formatShortDate(r.date);
 
             const text = document.createElement('span');
-            text.textContent = `${String(r.distanceKm).replace('.', ',')} km · ${r.durationMin} Min (${formatPace(r.distanceKm, r.durationMin)})`;
+            text.textContent = `${String(r.distanceKm).replace('.', ',')} km · ${formatRunDuration(r.durationMin)} · ${formatPace(r.distanceKm, r.durationMin)} · ${formatSpeed(r.distanceKm, r.durationMin)}`;
             left.append(badge, text);
             left.appendChild(createDeltaBadge(runEval.status, runEval.text));
 
@@ -4036,121 +4134,248 @@
         }
     }
 
-    /* REITER 6: ERNÄHRUNG (YAZIO) & WASSER */
+    /* HEUTE: ERNÄHRUNG (Kalorien + Makros, manuell, mit Tageszielen) */
+    // Gespeichert pro Tag in nutritionHistoryV2: { "2026-11-23": [ {id, name, kcal, protein, carbs, fat}, ... ] }
+    // Tagesziele in nutritionGoalsV2: { kcal: {value, mode: 'max'|'min'}, protein: {...}, carbs: {...}, fat: {...} }
+    const NUTRIENTS = [
+        { key: 'kcal', label: 'Kalorien', unit: 'kcal', defaultMode: 'max', maxValue: 20000 },
+        { key: 'protein', label: 'Eiweiß', unit: 'g', defaultMode: 'min', maxValue: 2000 },
+        { key: 'carbs', label: 'Kohlenhydrate', unit: 'g', defaultMode: 'max', maxValue: 2000 },
+        { key: 'fat', label: 'Fett', unit: 'g', defaultMode: 'max', maxValue: 2000 }
+    ];
+
     function getNutritionHistory() {
         try {
             const obj = JSON.parse(localStorage.getItem('nutritionHistoryV2'));
-            return obj && typeof obj === 'object' ? obj : {};
+            return obj && typeof obj === 'object' && !Array.isArray(obj) ? obj : {};
         } catch (e) {
             return {};
         }
     }
 
-    function getWaterHistory() {
-        try {
-            const obj = JSON.parse(localStorage.getItem('waterHistoryV2'));
-            return obj && typeof obj === 'object' ? obj : {};
-        } catch (e) {
-            return {};
-        }
+    function getNutritionEntries(dateKey) {
+        const list = getNutritionHistory()[dateKey];
+        return Array.isArray(list) ? list : [];
     }
 
-    function getNutritionToday() {
-        const today = getLocalDateKey();
-        try {
-            const data = JSON.parse(localStorage.getItem('nutritionV2'));
-            if (data && data.date === today && Array.isArray(data.entries)) {
-                return data;
-            }
-        } catch (e) {}
-        const fresh = { date: today, entries: [] };
-        localStorage.setItem('nutritionV2', JSON.stringify(fresh));
-        return fresh;
-    }
-
-    function saveNutritionState(state) {
-        localStorage.setItem('nutritionV2', JSON.stringify(state));
+    function saveNutritionEntries(dateKey, entries) {
         const hist = getNutritionHistory();
-        if (state.entries.length > 0) {
-            hist[state.date] = state.entries;
-        } else {
-            delete hist[state.date];
-        }
+        if (entries.length > 0) hist[dateKey] = entries;
+        else delete hist[dateKey];
         localStorage.setItem('nutritionHistoryV2', JSON.stringify(hist));
     }
 
-    function addNutritionEntry() {
-        const name = document.getElementById('nutMealName').value.trim() || 'Mahlzeit';
-        const kcal = parseInt(document.getElementById('nutKcalInput').value, 10);
-        const protein = parseInt(document.getElementById('nutProteinInput').value, 10) || 0;
+    function getNutritionTotals(dateKey) {
+        const totals = { kcal: 0, protein: 0, carbs: 0, fat: 0, count: 0 };
+        getNutritionEntries(dateKey).forEach(e => {
+            NUTRIENTS.forEach(n => { totals[n.key] += Number(e[n.key]) || 0; });
+            totals.count += 1;
+        });
+        NUTRIENTS.forEach(n => { totals[n.key] = Math.round(totals[n.key] * 10) / 10; });
+        return totals;
+    }
 
-        if (isNaN(kcal) || kcal <= 0 || kcal > 10000) {
-            showToast('Bitte gültige Kalorienzahl eingeben.');
+    function getNutritionGoals() {
+        let raw = {};
+        try {
+            const obj = JSON.parse(localStorage.getItem('nutritionGoalsV2'));
+            if (obj && typeof obj === 'object') raw = obj;
+        } catch (e) {}
+        const goals = {};
+        NUTRIENTS.forEach(n => {
+            const g = raw[n.key] || {};
+            const value = Number(g.value);
+            goals[n.key] = {
+                value: isFinite(value) && value > 0 ? value : null,
+                mode: g.mode === 'min' || g.mode === 'max' ? g.mode : n.defaultMode
+            };
+        });
+        return goals;
+    }
+
+    // true = Ziel eingehalten (grüner Haken), false = verfehlt (rotes X), null = kein Ziel
+    function isNutritionGoalMet(total, goal) {
+        if (!goal || goal.value === null) return null;
+        return goal.mode === 'max' ? total <= goal.value : total >= goal.value;
+    }
+
+    function formatNum(n) {
+        return (Math.round(n * 10) / 10).toLocaleString('de-DE');
+    }
+
+    function renderNutritionGoalRows(container, totals, compact) {
+        const goals = getNutritionGoals();
+        container.innerHTML = '';
+        if (compact && totals.count === 0) {
+            const p = document.createElement('p');
+            p.className = 'muted';
+            p.style.margin = '0';
+            p.textContent = 'Heute noch nichts eingetragen.';
+            container.appendChild(p);
+            return;
+        }
+        NUTRIENTS.forEach(n => {
+            const goal = goals[n.key];
+            const met = isNutritionGoalMet(totals[n.key], goal);
+            const row = document.createElement('div');
+            row.className = 'goal-row';
+            row.dataset.nutrient = n.key;
+
+            const name = document.createElement('span');
+            name.className = 'goal-name';
+            name.textContent = n.label;
+
+            const value = document.createElement('span');
+            value.className = 'goal-value';
+            value.textContent = `${formatNum(totals[n.key])} ${n.unit}` +
+                (goal.value !== null ? ` / ${goal.mode === 'max' ? 'max.' : 'min.'} ${formatNum(goal.value)} ${n.unit}` : '');
+
+            const mark = document.createElement('span');
+            mark.className = 'goal-mark ' + (met === null ? 'none' : (met ? 'ok' : 'bad'));
+            mark.textContent = met === null ? '–' : (met ? '✓' : '✗');
+            mark.title = met === null ? 'Kein Ziel festgelegt' : (met ? 'Ziel eingehalten' : 'Ziel verfehlt');
+
+            const right = document.createElement('span');
+            right.style.display = 'flex';
+            right.style.alignItems = 'center';
+            right.style.gap = '8px';
+            right.append(value, mark);
+            row.append(name, right);
+            container.appendChild(row);
+        });
+    }
+
+    function shiftNutritionDate(delta) {
+        const next = shiftDateKey(selectedNutritionDate, delta);
+        if (next > getLocalDateKey()) return;
+        selectedNutritionDate = next;
+        renderNutrition();
+    }
+
+    function readNutrientInput(id) {
+        const raw = String(document.getElementById(id).value || '').trim();
+        if (raw === '') return 0;
+        return parseDecimal(raw);
+    }
+
+    function addNutritionEntry() {
+        const name = document.getElementById('nutMealName').value.trim().slice(0, 80) || 'Eintrag';
+        const ids = { kcal: 'nutKcalInput', protein: 'nutProteinInput', carbs: 'nutCarbsInput', fat: 'nutFatInput' };
+        const entry = { id: `nut_${Date.now()}`, name };
+        let any = false;
+        for (const n of NUTRIENTS) {
+            const v = readNutrientInput(ids[n.key]);
+            if (isNaN(v) || v < 0 || v > n.maxValue) {
+                showToast(`Bitte gültigen Wert bei „${n.label}“ eingeben.`);
+                return;
+            }
+            entry[n.key] = Math.round(v * 10) / 10;
+            if (v > 0) any = true;
+        }
+        if (!any) {
+            showToast('Bitte mindestens einen Wert eingeben.');
             return;
         }
 
-        const state = getNutritionToday();
-        state.entries.push({
-            id: `nut_${Date.now()}`,
-            name,
-            kcal,
-            protein: Math.max(0, protein)
-        });
-        saveNutritionState(state);
+        const day = selectedNutritionDate;
+        const entries = getNutritionEntries(day).slice();
+        entries.push(entry);
+        saveNutritionEntries(day, entries);
 
+        Object.values(ids).forEach(id => { document.getElementById(id).value = ''; });
         document.getElementById('nutMealName').value = '';
-        document.getElementById('nutKcalInput').value = '';
-        document.getElementById('nutProteinInput').value = '';
 
-        markDateActive(getLocalDateKey());
+        markDateActive(day);
         renderNutrition();
-        showToast('Mahlzeit gespeichert.');
+        renderOverview();
+        showToast('Gespeichert.');
     }
 
     function deleteNutritionEntry(id) {
-        const state = getNutritionToday();
-        state.entries = state.entries.filter(e => e.id !== id);
-        saveNutritionState(state);
-        unmarkDateIfEmpty(state.date);
+        const day = selectedNutritionDate;
+        saveNutritionEntries(day, getNutritionEntries(day).filter(e => e.id !== id));
+        unmarkDateIfEmpty(day);
         renderNutrition();
+        renderOverview();
     }
 
-    function resetNutritionToday() {
-        const fresh = { date: getLocalDateKey(), entries: [] };
-        saveNutritionState(fresh);
-        unmarkDateIfEmpty(fresh.date);
+    function saveNutritionGoals() {
+        const goals = {};
+        for (const n of NUTRIENTS) {
+            const raw = String(document.getElementById(`nutGoal_${n.key}`).value || '').trim();
+            const mode = document.getElementById(`nutGoalMode_${n.key}`).value === 'min' ? 'min' : 'max';
+            let value = null;
+            if (raw !== '') {
+                value = parseDecimal(raw);
+                if (isNaN(value) || value <= 0 || value > n.maxValue) {
+                    showToast(`Bitte gültiges Ziel bei „${n.label}“ eingeben.`);
+                    return;
+                }
+            }
+            goals[n.key] = { value, mode };
+        }
+        localStorage.setItem('nutritionGoalsV2', JSON.stringify(goals));
         renderNutrition();
-        showToast('Tageswerte zurückgesetzt.');
+        renderOverview();
+        showToast('Ziele gespeichert.');
+    }
+
+    function renderNutritionGoalEditor() {
+        const box = document.getElementById('nutGoalEditor');
+        if (box.contains(document.activeElement)) return; // nicht beim Tippen überschreiben
+        const goals = getNutritionGoals();
+        box.innerHTML = '';
+        NUTRIENTS.forEach(n => {
+            const label = document.createElement('label');
+            label.className = 'field-label';
+            label.htmlFor = `nutGoal_${n.key}`;
+            label.textContent = `${n.label} (${n.unit})`;
+
+            const grid = document.createElement('div');
+            grid.className = 'goal-edit-grid';
+            grid.style.marginBottom = '10px';
+
+            const sel = document.createElement('select');
+            sel.id = `nutGoalMode_${n.key}`;
+            [['max', 'höchstens'], ['min', 'mindestens']].forEach(([v, t]) => {
+                const o = document.createElement('option');
+                o.value = v;
+                o.textContent = t;
+                sel.appendChild(o);
+            });
+            sel.value = goals[n.key].mode;
+
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.inputMode = 'decimal';
+            inp.id = `nutGoal_${n.key}`;
+            inp.placeholder = 'kein Ziel';
+            inp.value = goals[n.key].value !== null ? String(goals[n.key].value).replace('.', ',') : '';
+
+            grid.append(sel, inp);
+            box.append(label, grid);
+        });
     }
 
     function renderNutrition() {
-        const state = getNutritionToday();
-        const goalKcal = 2100;
-        const goalProtein = 160;
-
-        let totalKcal = 0;
-        let totalProtein = 0;
-        state.entries.forEach(e => {
-            totalKcal += e.kcal;
-            totalProtein += e.protein;
-        });
-
-        document.getElementById('nutTodayKcal').textContent = totalKcal;
-        document.getElementById('nutGoalKcal').textContent = goalKcal;
-        document.getElementById('nutTodayProtein').textContent = totalProtein;
-        document.getElementById('nutGoalProtein').textContent = goalProtein;
-
-        document.getElementById('nutKcalBar').style.width = `${Math.min(100, (totalKcal / goalKcal) * 100)}%`;
-        document.getElementById('nutProteinBar').style.width = `${Math.min(100, (totalProtein / goalProtein) * 100)}%`;
+        const day = selectedNutritionDate;
+        document.getElementById('nutDateLabel').textContent = formatDisplayDate(day);
+        renderNutritionGoalRows(document.getElementById('nutGoalRows'), getNutritionTotals(day), false);
+        renderNutritionGoalEditor();
 
         const list = document.getElementById('nutEntriesList');
         list.innerHTML = '';
-        state.entries.forEach(e => {
+        getNutritionEntries(day).forEach(e => {
             const row = document.createElement('div');
             row.className = 'set-row';
 
             const info = document.createElement('span');
-            info.textContent = `${e.name}: ${e.kcal} kcal (${e.protein} g Eiweiß)`;
+            const parts = [];
+            if (e.kcal) parts.push(`${formatNum(e.kcal)} kcal`);
+            if (e.protein) parts.push(`${formatNum(e.protein)} g Eiweiß`);
+            if (e.carbs) parts.push(`${formatNum(e.carbs)} g KH`);
+            if (e.fat) parts.push(`${formatNum(e.fat)} g Fett`);
+            info.textContent = `${e.name}: ${parts.join(' · ') || '–'}`;
 
             const del = document.createElement('button');
             del.type = 'button';
@@ -4161,46 +4386,6 @@
             row.append(info, del);
             list.appendChild(row);
         });
-    }
-
-    function getWaterToday() {
-        const today = getLocalDateKey();
-        try {
-            const data = JSON.parse(localStorage.getItem('waterV2'));
-            if (data && data.date === today && typeof data.count === 'number') {
-                return data;
-            }
-        } catch (e) {}
-        const fresh = { date: today, count: 0 };
-        localStorage.setItem('waterV2', JSON.stringify(fresh));
-        return fresh;
-    }
-
-    function updateWater(delta) {
-        const state = getWaterToday();
-        state.count = Math.max(0, state.count + delta);
-        localStorage.setItem('waterV2', JSON.stringify(state));
-
-        const hist = getWaterHistory();
-        if (state.count > 0) {
-            hist[state.date] = state.count;
-        } else {
-            delete hist[state.date];
-        }
-        localStorage.setItem('waterHistoryV2', JSON.stringify(hist));
-
-        renderWater();
-    }
-
-    function renderWater() {
-        const count = getWaterToday().count;
-        document.getElementById('waterCount').textContent = count;
-        document.getElementById('waterLiters').textContent = (count * 0.25).toFixed(2).replace('.', ',');
-        document.getElementById('waterBar').style.width = `${Math.min(100, (count / 12) * 100)}%`;
-    }
-
-    function triggerSyncCheck(appName) {
-        showToast(`${appName}: Schnittstelle bereit für Firebase-Verbindung.`);
     }
 
     /* REITER 7: STATISTIK, ÜBUNGS-ENTWICKLUNG & TAGES-ARCHIV */
@@ -4774,10 +4959,6 @@
         if (pendingLiveSteps > 0 && pendingLiveStepsDate) set.add(pendingLiveStepsDate);
         getRuns().forEach(r => { if (r.date) set.add(r.date); });
         Object.keys(getNutritionHistory()).forEach(d => set.add(d));
-        const waterHistAll = getWaterHistory();
-        Object.keys(waterHistAll).forEach(d => {
-            if (waterHistAll[d] > 0) set.add(d);
-        });
         getBodyMetricsLog().forEach(m => { if (m.date) set.add(m.date); });
         return Array.from(set).sort().reverse();
     }
@@ -4817,8 +4998,7 @@
         const allRuns = getRuns();
         const dayRuns = allRuns.filter(r => r.date === dateKey);
         const daySteps = getStepsForDate(dateKey);
-        const dayNutrition = getNutritionHistory()[dateKey] || (getNutritionToday().date === dateKey ? getNutritionToday().entries : []);
-        const dayWater = getWaterHistory()[dateKey] || (getWaterToday().date === dateKey ? getWaterToday().count : 0);
+        const dayNutrition = getNutritionEntries(dateKey);
         const dayMetrics = getBodyMetricsLog().filter(m => m.date === dateKey);
 
         const summaryParts = [];
@@ -5133,54 +5313,30 @@
             container.appendChild(block);
         }
 
-        // 6. Ernährung & Wasser
-        if ((Array.isArray(dayNutrition) && dayNutrition.length > 0) || dayWater > 0) {
+        // 6. Ernährung
+        if (dayNutrition.length > 0) {
             hasAnyEntry = true;
-            let kcalSum = 0;
-            let protSum = 0;
-            (dayNutrition || []).forEach(n => {
-                kcalSum += n.kcal;
-                protSum += n.protein;
-            });
-            if (kcalSum > 0) summaryParts.push(`${kcalSum} kcal`);
+            const t = getNutritionTotals(dateKey);
+            if (t.kcal > 0) summaryParts.push(`${formatNum(t.kcal)} kcal`);
 
             const sectionTitle = document.createElement('h3');
-            sectionTitle.textContent = 'Ernährung & Flüssigkeit';
+            sectionTitle.textContent = 'Ernährung';
             container.appendChild(sectionTitle);
 
             const block = document.createElement('div');
             block.className = 'exercise-block';
-
-            if (kcalSum > 0) {
-                const row = document.createElement('div');
-                row.className = 'set-row';
-                row.style.marginTop = '0';
-                const info = document.createElement('div');
-                const badge = document.createElement('span');
-                badge.className = 'set-badge purple';
-                badge.textContent = `${kcalSum} kcal`;
-                const txt = document.createElement('span');
-                txt.textContent = `${protSum} g Eiweiß (${dayNutrition.length} Einträge)`;
-                info.append(badge, txt);
-                row.appendChild(info);
-                block.appendChild(row);
-            }
-
-            if (dayWater > 0) {
-                const wRow = document.createElement('div');
-                wRow.className = 'set-row';
-                if (kcalSum === 0) wRow.style.marginTop = '0';
-                const info = document.createElement('div');
-                const badge = document.createElement('span');
-                badge.className = 'set-badge blue';
-                badge.textContent = `${(dayWater * 0.25).toFixed(2).replace('.', ',')} L Wasser`;
-                const txt = document.createElement('span');
-                txt.textContent = `${dayWater} Gläser`;
-                info.append(badge, txt);
-                wRow.appendChild(info);
-                block.appendChild(wRow);
-            }
-
+            const row = document.createElement('div');
+            row.className = 'set-row';
+            row.style.marginTop = '0';
+            const info = document.createElement('div');
+            const badge = document.createElement('span');
+            badge.className = 'set-badge purple';
+            badge.textContent = `${formatNum(t.kcal)} kcal`;
+            const txt = document.createElement('span');
+            txt.textContent = `${formatNum(t.protein)} g Eiweiß · ${formatNum(t.carbs)} g KH · ${formatNum(t.fat)} g Fett`;
+            info.append(badge, txt);
+            row.appendChild(info);
+            block.appendChild(row);
             container.appendChild(block);
         }
 
@@ -5191,7 +5347,7 @@
             summaryParts.push(`Waage: ${String(latestM.weightKg).replace('.', ',')} kg`);
 
             const sectionTitle = document.createElement('h3');
-            sectionTitle.textContent = 'Waage & Körperwerte';
+            sectionTitle.textContent = 'Gewicht';
             container.appendChild(sectionTitle);
 
             const block = document.createElement('div');
@@ -5205,7 +5361,7 @@
             badge.className = 'set-badge purple';
             badge.textContent = `${String(latestM.weightKg).replace('.', ',')} kg`;
             const txt = document.createElement('span');
-            txt.textContent = latestM.bodyFatPct != null ? `Körperfett: ${String(latestM.bodyFatPct).replace('.', ',')} %` : 'Gewichtsmessung';
+            txt.textContent = 'Gewichtsmessung';
             info.append(badge, txt);
             row.appendChild(info);
             block.appendChild(row);
@@ -5529,8 +5685,8 @@
             localStorage.removeItem('userWeightV2');
             localStorage.removeItem('userBodyFatV2');
         }
-        renderProfile();
-        renderMotivation();
+        renderWeightPage();
+        renderOverview();
         showToast('Messwert gelöscht.');
     }
 
@@ -5564,49 +5720,37 @@
         showToast(`Geburtsdatum gespeichert (${age} Jahre).`);
     }
 
+    // Gewicht speichern (nur Gewicht – keine Körpermaße, kein Körperfett; Grundsatz des Nutzers)
     function saveProfileMetrics() {
         const w = parseDecimal(document.getElementById('profWeightInput').value);
-        const bf = parseDecimal(document.getElementById('profBodyFatInput').value);
         const goalW = parseDecimal(document.getElementById('profGoalWeightInput').value);
+        const goalRaw = String(document.getElementById('profGoalWeightInput').value || '').trim();
 
         let somethingSaved = false;
-        const bfRaw = String(document.getElementById('profBodyFatInput').value || '').trim();
-        const bfInvalid = bfRaw !== '' && !(!isNaN(bf) && bf >= 2 && bf <= 70);
-
         if (!isNaN(w) && w >= 35 && w <= 350) {
             localStorage.setItem('userWeightV2', w.toFixed(1));
-            const validBf = (!isNaN(bf) && bf >= 2 && bf <= 70) ? bf : NaN;
-            if (!isNaN(validBf)) {
-                localStorage.setItem('userBodyFatV2', validBf.toFixed(1));
-            }
-            recordBodyMetric(w, validBf);
-            syncBodyFatToLatestMetric();
+            recordBodyMetric(w, NaN);
             markDateActive(getLocalDateKey());
             somethingSaved = true;
-        } else if (!isNaN(bf) && bf >= 2 && bf <= 70) {
-            localStorage.setItem('userBodyFatV2', bf.toFixed(1));
-            const existingW = parseFloat(localStorage.getItem('userWeightV2'));
-            if (!isNaN(existingW)) {
-                recordBodyMetric(existingW, bf);
-            }
-            somethingSaved = true;
         }
-
         if (!isNaN(goalW) && goalW >= 35 && goalW <= 250) {
+            const changed = localStorage.getItem('userGoalWeightV2') !== goalW.toFixed(1);
             localStorage.setItem('userGoalWeightV2', goalW.toFixed(1));
-            somethingSaved = true;
+            if (changed) somethingSaved = true;
+        } else if (goalRaw !== '') {
+            showToast('Zielgewicht bitte zwischen 35 und 250 kg.');
+            return;
         }
 
         if (!somethingSaved) {
-            showToast('Bitte gültige Werte eingeben.');
+            showToast('Bitte gültiges Gewicht eingeben (35–350 kg).');
             return;
         }
 
         document.getElementById('profWeightInput').value = '';
-        document.getElementById('profBodyFatInput').value = '';
-        renderProfile();
-        renderMotivation();
-        showToast(bfInvalid ? 'Gespeichert – Körperfett ungültig (2–70 %) und ignoriert.' : 'Persönliche Daten gespeichert.');
+        renderWeightPage();
+        renderOverview();
+        showToast('Gewicht gespeichert.');
     }
 
     function renderProfile() {
@@ -5622,15 +5766,24 @@
             document.getElementById('profileAgeDisplay').textContent = '- Jahre';
             document.getElementById('profileDobHint').textContent = 'Geburtsdatum hinterlegen, damit dein Alter automatisch mitwächst.';
         }
+    }
 
+    function renderWeightPage() {
         const curW = parseFloat(localStorage.getItem('userWeightV2'));
-        const curBf = parseFloat(localStorage.getItem('userBodyFatV2'));
         const goalW = getGoalWeight();
 
         document.getElementById('profCurrentWeight').textContent = !isNaN(curW) ? `${curW.toFixed(1).replace('.', ',')} kg` : '- kg';
-        document.getElementById('profBodyFat').textContent = !isNaN(curBf) ? `${curBf.toFixed(1).replace('.', ',')} %` : '- %';
         document.getElementById('profGoalWeight').textContent = !isNaN(goalW) ? `${goalW.toFixed(1).replace('.', ',')} kg` : '- kg';
-        document.getElementById('profGoalWeightInput').value = !isNaN(goalW) ? goalW.toFixed(1).replace('.', ',') : '';
+        const goalField = document.getElementById('profGoalWeightInput');
+        if (document.activeElement !== goalField) {
+            goalField.value = !isNaN(goalW) ? goalW.toFixed(1).replace('.', ',') : '';
+        }
+        let diffText = '- kg';
+        if (!isNaN(curW) && !isNaN(goalW)) {
+            const diff = curW - goalW;
+            diffText = `${diff > 0 ? '+' : ''}${diff.toFixed(1).replace('.', ',')} kg`;
+        }
+        document.getElementById('profDiffWeight').textContent = diffText;
 
         renderWeightChart('profWeightChartCanvas', 'profWeightDeltaLabel');
 
@@ -5641,7 +5794,7 @@
         if (log.length === 0) {
             const empty = document.createElement('p');
             empty.className = 'muted';
-            empty.textContent = 'Noch keine Messwerte eingetragen.';
+            empty.textContent = 'Noch kein Gewicht eingetragen.';
             list.appendChild(empty);
             return;
         }
@@ -5655,9 +5808,8 @@
             badge.className = 'set-badge';
             badge.textContent = formatShortDate(entry.date);
 
-            const bfText = entry.bodyFatPct != null ? ` · ${String(entry.bodyFatPct).replace('.', ',')} % KFA` : '';
             const text = document.createElement('span');
-            text.textContent = `${String(entry.weightKg).replace('.', ',')} kg${bfText}`;
+            text.textContent = `${String(entry.weightKg).replace('.', ',')} kg`;
             left.append(badge, text);
 
             const del = document.createElement('button');
@@ -5741,34 +5893,6 @@
         return { current, best };
     }
 
-    function saveMotivationWeight() {
-        const w = parseDecimal(document.getElementById('motWeightInput').value);
-        const g = parseDecimal(document.getElementById('motGoalWeightInput').value);
-
-        let motSaved = false;
-        if (!isNaN(w) && w >= 35 && w <= 350) {
-            localStorage.setItem('userWeightV2', w.toFixed(1));
-            recordBodyMetric(w, NaN);
-            syncBodyFatToLatestMetric();
-            markDateActive(getLocalDateKey());
-            motSaved = true;
-        }
-        if (!isNaN(g) && g >= 35 && g <= 250) {
-            localStorage.setItem('userGoalWeightV2', g.toFixed(1));
-            motSaved = true;
-        }
-
-        if (!motSaved) {
-            showToast('Bitte gültige Werte eingeben.');
-            return;
-        }
-
-        document.getElementById('motWeightInput').value = '';
-        renderMotivation();
-        renderProfile();
-        showToast('Gewichtsdaten aktualisiert.');
-    }
-
     function savePersonalWhy() {
         const text = document.getElementById('personalWhyInput').value.trim();
         localStorage.setItem('personalWhyV2', text);
@@ -5824,27 +5948,6 @@
 
         document.getElementById('challengeProgressText').textContent = `${weeklySessions} von 3 Trainingstagen absolviert`;
         document.getElementById('challengeBar').style.width = `${Math.min(100, (weeklySessions / 3) * 100)}%`;
-
-        const curW = parseFloat(localStorage.getItem('userWeightV2'));
-        const goalW = getGoalWeight();
-        document.getElementById('motTargetWeight').textContent = !isNaN(goalW) ? `${goalW.toFixed(1).replace('.', ',')} kg` : '- kg';
-        document.getElementById('motGoalWeightInput').value = !isNaN(goalW) ? goalW.toFixed(1).replace('.', ',') : '';
-
-        if (!isNaN(curW)) {
-            document.getElementById('motCurrentWeight').textContent = `${curW.toFixed(1).replace('.', ',')} kg`;
-            if (!isNaN(goalW)) {
-                const diff = curW - goalW;
-                const diffText = diff > 0 ? `+${diff.toFixed(1).replace('.', ',')} kg` : `${diff.toFixed(1).replace('.', ',')} kg`;
-                document.getElementById('motDiffWeight').textContent = diffText;
-            } else {
-                document.getElementById('motDiffWeight').textContent = '- kg';
-            }
-        } else {
-            document.getElementById('motCurrentWeight').textContent = '- kg';
-            document.getElementById('motDiffWeight').textContent = '- kg';
-        }
-
-        renderWeightChart('motWeightChartCanvas', 'motWeightDeltaLabel');
 
         document.getElementById('personalWhyInput').value = localStorage.getItem('personalWhyV2') || '';
         const dayIndex = new Date().getDate() % DAILY_TIPS.length;
@@ -5914,10 +6017,8 @@
             stepsHistoryV2: getStepsHistory(),
             dailyStepGoalV2: getStepGoal(),
             runningLogsV2: getRuns(),
-            nutritionV2: getNutritionToday(),
             nutritionHistoryV2: getNutritionHistory(),
-            waterV2: getWaterToday(),
-            waterHistoryV2: getWaterHistory(),
+            nutritionGoalsV2: getNutritionGoals(),
             activeDatesV2: Array.from(getActiveDatesSet()),
             userDobV2: localStorage.getItem('userDobV2'),
             userWeightV2: localStorage.getItem('userWeightV2'),
@@ -5958,8 +6059,7 @@
         ['runningLogsV2', 'array'],
         ['nutritionV2', 'object'],
         ['nutritionHistoryV2', 'object'],
-        ['waterV2', 'object'],
-        ['waterHistoryV2', 'object'],
+        ['nutritionGoalsV2', 'object'],
         ['activeDatesV2', 'array'],
         ['userDobV2', 'string'],
         ['userWeightV2', 'string'],
@@ -5986,14 +6086,6 @@
                 const data = JSON.parse(e.target.result);
                 if (data === null || typeof data !== 'object' || Array.isArray(data)) {
                     throw new Error('invalid');
-                }
-
-                // Bridge-Datei (Health Connect, Yazio-Konverter, Laufapp ...) statt eines vollständigen Backups
-                const isBackupFile = BACKUP_SCHEMA.some(([key]) => Object.prototype.hasOwnProperty.call(data, key));
-                if (!isBackupFile && looksLikeBridgePayload(data)) {
-                    showToast(summarizeBridgeResult(window.FitnessHealthBridge.ingest(data)));
-                    event.target.value = '';
-                    return;
                 }
 
                 const toWrite = [];
@@ -6027,17 +6119,8 @@
         reader.readAsText(file);
     }
 
-    /* ====================================================================
-       SCHNITTSTELLE FÜR EXTERNE DATENQUELLEN  (Schema "fitness-bridge/1")
-       Genutzt von: Health-Connect-/HealthKit-Wrapper, Yazio-Konverter, Laufapps,
-       Automations-Apps. Zwei Wege führen hinein:
-         1) JavaScript:  window.FitnessHealthBridge.ingest(payload)
-         2) Datei:       "Backup laden" akzeptiert auch eine Bridge-JSON-Datei
-       Alle Importe sind wiederholbar (kein Duplikat bei erneutem Sync).
-       ==================================================================== */
-    const BRIDGE_SCHEMA = 'fitness-bridge/1';
-    const BRIDGE_KEYS = ['steps', 'stepsHistory', 'weights', 'weightKg', 'runs', 'nutrition'];
-
+    /* Datum aus der Android-App prüfen: "JJJJ-MM-TT" oder Zeitstempel -> lokaler Tag.
+       (Die frühere Schnittstelle für fremde Apps wie Yazio/adidas wurde am 23.11.2026 entfernt.) */
     function bridgeDateKey(value, fallback) {
         if (value === undefined || value === null || value === '') return fallback;
         if (typeof value !== 'string') return null;
@@ -6057,187 +6140,6 @@
         if (key > shiftDateKey(getLocalDateKey(), 1)) return null; // keine Einträge in der Zukunft
         return key;
     }
-
-    function looksLikeBridgePayload(data) {
-        if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
-        return data.schema === BRIDGE_SCHEMA || BRIDGE_KEYS.some(k => Object.prototype.hasOwnProperty.call(data, k));
-    }
-
-    function summarizeBridgeResult(res) {
-        if (!res.ok) return 'Import fehlgeschlagen: ' + (res.skipped[0] ? res.skipped[0].reason : 'ungültige Daten');
-        const parts = [];
-        if (res.added.steps) parts.push(res.added.steps === 1 ? '1 Tag Schritte' : `${res.added.steps} Tage Schritte`);
-        if (res.added.weights) parts.push(res.added.weights === 1 ? '1 Gewichtswert' : `${res.added.weights} Gewichtswerte`);
-        if (res.added.runs) parts.push(res.added.runs === 1 ? '1 Lauf' : `${res.added.runs} Läufe`);
-        if (res.added.meals) parts.push(res.added.meals === 1 ? '1 Mahlzeit' : `${res.added.meals} Mahlzeiten`);
-        let text = parts.length ? `Import: ${parts.join(' · ')}` : 'Import: nichts Neues';
-        if (res.skipped.length) text += ` (${res.skipped.length} übersprungen)`;
-        return text;
-    }
-
-    window.FitnessHealthBridge = {
-        version: BRIDGE_SCHEMA,
-
-        /* Nimmt Daten entgegen und gibt eine Zusammenfassung zurück:
-           { ok, added: { steps, weights, runs, meals }, skipped: [{ what, reason }] } */
-        ingest(payload) {
-            const result = { ok: true, added: { steps: 0, weights: 0, runs: 0, meals: 0 }, skipped: [] };
-            const skip = (what, reason) => result.skipped.push({ what, reason });
-
-            if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-                result.ok = false;
-                skip('payload', 'Kein gültiges Objekt');
-                return result;
-            }
-            if (payload.schema && payload.schema !== BRIDGE_SCHEMA) {
-                result.ok = false;
-                skip('schema', `Unbekanntes Schema "${payload.schema}" (erwartet: ${BRIDGE_SCHEMA})`);
-                return result;
-            }
-
-            const today = getLocalDateKey();
-
-            // ---- Schritte (Tagessummen). steps: Zahl = heute, oder Liste [{date, steps}] ----
-            const stepItems = [];
-            if (typeof payload.steps === 'number') stepItems.push({ date: today, steps: payload.steps });
-            else if (Array.isArray(payload.steps)) payload.steps.forEach(i => stepItems.push(i));
-            if (Array.isArray(payload.stepsHistory)) payload.stepsHistory.forEach(i => stepItems.push(i));
-            stepItems.forEach(item => {
-                const day = item && bridgeDateKey(item.date, null);
-                const count = item ? Number(item.steps) : NaN;
-                if (!day || !isFinite(count) || count < 0 || count > 150000) {
-                    skip('steps', 'Ungültiges Datum oder ungültige Schrittzahl');
-                    return;
-                }
-                const current = getStepsForDate(day);
-                // Standard: größerer Wert gewinnt (Sync liegt oft hinter dem Live-Zähler zurück).
-                // Mit stepsMode: "replace" wird der Wert exakt übernommen.
-                if (payload.stepsMode === 'replace' ? count !== current : count > current) {
-                    saveStepsForDate(day, count);
-                    result.added.steps++;
-                }
-            });
-
-            // ---- Gewicht / Körperfett: weights [{date, weightKg, bodyFatPct}] oder weightKg (heute) ----
-            const weightItems = [];
-            if (typeof payload.weightKg === 'number') {
-                weightItems.push({ date: today, weightKg: payload.weightKg, bodyFatPct: payload.bodyFatPct });
-            }
-            if (Array.isArray(payload.weights)) payload.weights.forEach(i => weightItems.push(i));
-            weightItems.forEach(item => {
-                const day = item && bridgeDateKey(item.date, today);
-                const w = item ? Number(item.weightKg) : NaN;
-                if (!day || !isFinite(w) || w < 35 || w > 350) {
-                    skip('weight', 'Ungültiges Datum oder Gewicht (35–350 kg)');
-                    return;
-                }
-                const bfNum = item.bodyFatPct === undefined || item.bodyFatPct === null ? NaN : Number(item.bodyFatPct);
-                const bf = (isFinite(bfNum) && bfNum >= 2 && bfNum <= 70) ? bfNum : NaN;
-                if (recordBodyMetric(w, bf, day)) result.added.weights++;
-                markDateActive(day);
-            });
-            if (weightItems.length > 0) {
-                const log = getBodyMetricsLog();
-                if (log.length > 0) {
-                    localStorage.setItem('userWeightV2', log[log.length - 1].weightKg.toFixed(1));
-                    syncBodyFatToLatestMetric();
-                }
-            }
-
-            // ---- Läufe: runs [{externalId?, date, distanceKm, durationMin, source?}] ----
-            if (Array.isArray(payload.runs)) {
-                const runs = getRuns();
-                const known = new Set(runs.map(r => r.id));
-                const runCounts = {};
-                payload.runs.forEach(r => {
-                    const day = r && bridgeDateKey(r.date, today);
-                    const km = r ? Number(r.distanceKm) : NaN;
-                    const min = r ? Number(r.durationMin) : NaN;
-                    if (!day || !isFinite(km) || km <= 0 || km > 200 || !isFinite(min) || min <= 0 || min > 1000) {
-                        skip('run', 'Ungültiges Datum, Distanz (0–200 km) oder Dauer (1–1000 Min.)');
-                        return;
-                    }
-                    let id = r.externalId ? String(r.externalId) : null;
-                    if (!id) {
-                        const baseId = `${day}_${km}_${min}`;
-                        const occurrence = runCounts[baseId] || 0;
-                        runCounts[baseId] = occurrence + 1;
-                        id = occurrence === 0 ? baseId : `${baseId}_${occurrence}`;
-                    }
-                    if (known.has(id)) return;
-                    runs.push({
-                        id,
-                        date: day,
-                        distanceKm: Number(km.toFixed(2)),
-                        durationMin: Math.round(min),
-                        source: r.source ? String(r.source) : (payload.source ? String(payload.source) : 'Import')
-                    });
-                    known.add(id);
-                    markDateActive(day);
-                    result.added.runs++;
-                });
-                localStorage.setItem('runningLogsV2', JSON.stringify(runs));
-            }
-
-            // ---- Ernährung: nutrition [{externalId?, date?, name, kcal, protein}] (auch für vergangene Tage) ----
-            if (Array.isArray(payload.nutrition)) {
-                const hist = getNutritionHistory();
-                const perDay = {};
-                const mealCounts = {};
-                payload.nutrition.forEach(n => {
-                    const day = n && bridgeDateKey(n.date, today);
-                    const kcal = n ? Number(n.kcal) : NaN;
-                    if (!day || !isFinite(kcal) || kcal <= 0 || kcal > 10000) {
-                        skip('meal', 'Ungültiges Datum oder Kalorien (1–10000)');
-                        return;
-                    }
-                    const protein = Math.max(0, Number(n.protein) || 0);
-                    const name = n.name ? String(n.name).slice(0, 80) : (payload.source ? String(payload.source) : 'Import');
-                    if (!perDay[day]) {
-                        perDay[day] = day === today ? getNutritionToday().entries.slice() : (Array.isArray(hist[day]) ? hist[day].slice() : []);
-                    }
-                    let id = n.externalId ? String(n.externalId) : null;
-                    if (!id) {
-                        const baseId = `imp_${day}_${name}_${kcal}`;
-                        const occurrence = mealCounts[baseId] || 0;
-                        mealCounts[baseId] = occurrence + 1;
-                        id = occurrence === 0 ? baseId : `${baseId}_${occurrence}`;
-                    }
-                    if (perDay[day].some(e => e.id === id)) return;
-                    perDay[day].push({ id, name, kcal: Math.round(kcal), protein: Math.round(protein) });
-                    markDateActive(day);
-                    result.added.meals++;
-                });
-                Object.keys(perDay).forEach(day => {
-                    if (day === today) {
-                        saveNutritionState({ date: today, entries: perDay[day] });
-                    } else {
-                        const h = getNutritionHistory();
-                        h[day] = perDay[day];
-                        localStorage.setItem('nutritionHistoryV2', JSON.stringify(h));
-                    }
-                });
-            }
-
-            const total = result.added.steps + result.added.weights + result.added.runs + result.added.meals;
-            if (total > 0) initApp();
-            return result;
-        },
-
-        /* Gegenrichtung: aktuelle Daten (z. B. damit ein Wrapper Gewicht/Schritte in Health Connect schreibt) */
-        getSnapshot() {
-            flushPendingLiveSteps();
-            const steps = getStepsHistory();
-            return {
-                schema: BRIDGE_SCHEMA,
-                exportedAt: new Date().toISOString(),
-                steps: Object.keys(steps).sort().map(d => ({ date: d, steps: steps[d] })),
-                weights: getBodyMetricsLog().map(m => ({ date: m.date, weightKg: m.weightKg, bodyFatPct: m.bodyFatPct })),
-                runs: getRuns().map(r => ({ externalId: r.id, date: r.date, distanceKm: r.distanceKm, durationMin: r.durationMin, source: r.source })),
-                nutrition: Object.keys(getNutritionHistory()).sort().flatMap(d => getNutritionHistory()[d].map(e => ({ externalId: e.id, date: d, name: e.name, kcal: e.kcal, protein: e.protein })))
-            };
-        }
-    };
 
     /* ====================================================================
        EIGENE ANDROID-APP (Ordner "android/")
@@ -6301,7 +6203,6 @@
         if (document.visibilityState === 'hidden') {
             flushPendingLiveSteps();
         } else if (document.visibilityState === 'visible' &&
-            document.getElementById('appShell').style.display === 'block' &&
             appDayKey !== getLocalDateKey()) {
             initApp();
         }
@@ -6332,11 +6233,8 @@
             renderActivityChart();
             renderStatsExerciseProgression();
         }
-        if (document.getElementById('tab-profile').classList.contains('active')) {
+        if (document.getElementById('tab-weight').classList.contains('active')) {
             renderWeightChart('profWeightChartCanvas', 'profWeightDeltaLabel');
-        }
-        if (document.getElementById('tab-motivation').classList.contains('active')) {
-            renderWeightChart('motWeightChartCanvas', 'motWeightDeltaLabel');
         }
     });
 
@@ -6350,6 +6248,8 @@
         selectedBwDate = getLocalDateKey();
         selectedStretchDate = getLocalDateKey();
         selectedArchiveDate = getLocalDateKey();
+        selectedRunDate = getLocalDateKey();
+        selectedNutritionDate = getLocalDateKey();
 
         document.getElementById('gymStrengthDateLabel').textContent = formatDisplayDate(selectedGymStrengthDate);
         document.getElementById('gymCardioDateLabel').textContent = formatDisplayDate(selectedGymCardioDate);
@@ -6370,10 +6270,11 @@
         renderSteps();
         renderRuns();
         renderNutrition();
-        renderWater();
         renderStatsAndArchive();
         renderMotivation();
         renderProfile();
+        renderWeightPage();
+        renderOverview();
         showAppUpdateCard();
     }
 
@@ -6401,6 +6302,12 @@
         if (!hasAppUpdate()) return;
         window.AndroidApp.checkUpdate();
     }
+
+    // Start: App öffnet direkt auf „Heute → Übersicht“ (kein Begrüßungsbildschirm mehr)
+    document.getElementById('runDistanceInput').addEventListener('input', updateRunPreview);
+    document.getElementById('runDurationInput').addEventListener('input', updateRunPreview);
+    initApp();
+    switchTab('overview');
 </script>
 
 </body>

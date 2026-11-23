@@ -15,15 +15,14 @@ const { chromium } = require('playwright');
 
     await page.goto(page_);
     await page.waitForTimeout(500);
-    await page.screenshot({ path: path.join(outDir, 's-welcome.png') });
+    await page.screenshot({ path: path.join(outDir, 's-start.png') });
 
-    await page.evaluate(() => startApp());
     // Beispiel-Schritte, damit Balken und Diagramme etwas zeigen
     await page.evaluate(() => {
         const t = getLocalDateKey();
         localStorage.setItem('stepsHistoryV2', JSON.stringify({ [t]: 6400, [shiftDateKey(t, -1)]: 11200 }));
     });
-    for (const tab of ['steps', 'stats', 'motivation', 'gym-strength']) {
+    for (const tab of ['overview', 'steps', 'nutrition', 'running', 'weight', 'stats', 'motivation', 'gym-strength', 'plan', 'profile']) {
         await page.evaluate(t => { initApp(); switchTab(t); }, tab);
         await page.waitForTimeout(400);
         await page.screenshot({ path: path.join(outDir, 's-' + tab + '.png') });
