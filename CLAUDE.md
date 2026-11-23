@@ -7,12 +7,13 @@ Samsung-Smartphone) und speichert alle Daten **nur auf dem Gerät** (im Browser-
 „localStorage“), nicht im Internet.
 
 Menü unten (seit 23.11.2026): **5 Hauptbereiche**, oben jeweils Unter-Knöpfe:
-- 🏠 **Heute**: Übersicht (Startseite: Schritte, Serie, Gewicht, Ernährung mit ✓/✗,
-  Schnell-Knöpfe) · Schritte · Ernährung
+- 🏠 **Heute**: Übersicht (Startseite: Schritte, Gewicht-Trend mit Eingabe, Serie,
+  Ernährung mit ✓/✗, Schnell-Knöpfe) · Schritte · Ernährung
 - 📋 **Plan**: „Mein Trainingsplan“ (Platzhalter, kommt mit Teil 2)
 - 🏋️ **Training**: Kraft (Studio) · Cardio (Studio) · Bodyweight · Laufen · Dehnen
 - 📈 **Fortschritt**: Motivation (Serien, Wochen-Herausforderung, „Warum“, Abzeichen) ·
-  Gewicht · Statistik (Gesamtbilanz, Verlauf, Übungs-Entwicklung, Tages-Archiv)
+  Gewicht (Trend, Diagramm, Etappenziele, Wochen-Ø, Tageswerte) · Statistik (Gesamtbilanz,
+  Verlauf, Übungs-Entwicklung, Tages-Archiv)
 - 👤 **Profil**: Alter, Datensicherung (Backup speichern/laden), App-Version & Updates
 
 Der Nutzer trägt alles **abends von Hand** ein (bewusste Entscheidung, hält den Fokus).
@@ -37,7 +38,7 @@ Wichtige Details in `index.html`:
   `gymStrengthWorkoutsV2`, `gymCardioWorkoutsV2`, `bwWorkoutsV2`, `stretchWorkoutsV2`,
   `runningLogsV2`, `stepsHistoryV2`, `dailyStepGoalV2`, `nutritionHistoryV2`,
   `nutritionGoalsV2`, `userWeightV2`, `userGoalWeightV2`, `userBodyFatV2` (nur noch
-  still gespeichert, nicht angezeigt), `bodyMetricsLogV2`, `userDobV2`,
+  still gespeichert, nicht angezeigt), `bodyMetricsLogV2`, `weightMilestonesV2`, `userDobV2`,
   `personalWhyV2`, `activeDatesV2`.
   **Diese Namen nicht ändern**, sonst sind bestehende Daten auf dem Handy „weg“.
 - Navigation: `NAV_GROUPS` (Hauptbereich → Unterseiten), `switchGroup(...)` für die
@@ -50,6 +51,25 @@ Wichtige Details in `index.html`:
 - Laufen: Distanz + Zeit („32:15“, „1:05:30“ oder Minuten). `durationMin` wird mit
   Nachkommastellen gespeichert. Pro Lauf werden Pace (min/km) und km/h berechnet.
   Tag wählbar (‹ Heute ›), keine Zukunft.
+- **Gewicht (tägliches Wiegen mit Trend, seit 23.11.2026):**
+  - Ein Wert pro Tag in `bodyMetricsLogV2` (`{id, date, weightKg}`), eine Nachkommastelle.
+    Zweiter Wert am selben Tag → Rückfrage „ersetzen?“ (eigenes Fenster `showModal`, kein
+    Browser-`confirm`). Eingabe auf der Startseite und unter Fortschritt → Gewicht (immer „heute“).
+  - Rechnen im Block `WEIGHT-CALC-START … WEIGHT-CALC-END` (`WeightCalc`, reine Funktionen):
+    7-Tage-Ø = Mittel der vorhandenen Werte der letzten 7 Kalendertage (Lücken egal);
+    Wochen-Ø pro Kalenderwoche Mo–So (KW nach ISO); Veränderung zur Vorwoche = 7-Tage-Ø jetzt
+    minus 7-Tage-Ø der 7 Tage davor. Liegt der letzte Wert > 7 Tage zurück, gilt dessen Stand.
+  - **Maßgeblich ist der Ø, nicht der Tageswert:** „Verloren (Ø)“ = Ø der ersten 7 Tage minus
+    aktueller 7-Tage-Ø; Etappenziele = Weg Start-Ø → Zielgewicht in gleiche Stücke von ca. 2,5 kg,
+    erreicht, wenn der (gerundete) 7-Tage-Ø darunter liegt. Feier-Fenster nur einmal je Etappe
+    (`weightMilestonesV2`; neues Ziel → bereits erreichte werden nicht nochmal gefeiert).
+  - Hinweise: Tageswert steigt, Trend fällt → „Normale Tagesschwankung …“; Vorwoche −0,3 bis
+    −0,7 kg → „Ideales Tempo“; zwei Wochen hintereinander > 1 kg/Woche → sachlicher Hinweis
+    „langsamer ist meist nachhaltiger“.
+  - Diagramm (ca. 8 Wochen): Tageswerte blasse Punkte, 7-Tage-Ø orange Linie, Ziel blau gestrichelt.
+  - **Für den KI-Check-in (Teil 2) vorbereitet:** `getWeightCheckinData()` liefert 7-Tage-Ø,
+    Veränderung zur Vorwoche, Trend (fällt/steigt/stabil), Wochen-Ø der letzten 4 Wochen,
+    Start-Ø, verloren, Ziel – **kein einzelner Tageswert**. Diese Daten bekommt die KI.
 - **Entfernt am 23.11.2026** (Wunsch des Nutzers, es gab noch keine echten Daten):
   Wasser-Tracker (`waterV2`/`waterHistoryV2` werden beim Start gelöscht), Sync-Knöpfe und
   Hinweise auf adidas Running/Yazio/Health Connect, die Fremd-Schnittstelle
@@ -103,14 +123,20 @@ Wichtige Details in `index.html`:
   `REQUEST_INSTALL_PACKAGES`; kein Schlüssel im Code; startet den Java-Test
   `test/UpdateVersionTest.java` (z. B. „app-v1.0.10“ → 10, „10 ist neuer als 9“); fragt zum Schluss
   echt bei GitHub das neueste Release ab (ohne Internet nur Hinweis).
+- `node test/gewicht_test.js` – prüft die Gewichts-Berechnungen ohne Browser: ein Wert pro Tag,
+  7-Tage-Ø mit Lücken, Kalenderwochen Mo–So (auch Jahreswechsel), Veränderung zur Vorwoche (keine
+  falschen Vergleiche über fehlende Wochen), Hinweise (Schwankung, ideales Tempo, zu schnell),
+  „verloren“, Etappenziele, Daten für den KI-Check-in.
 - `node test/app_test.js` – prüft die Bedienung: 5 Menü-Knöpfe und Unter-Knöpfe, Start auf
   „Übersicht“, kein Körperfett/Yazio/adidas/Wasser, Lauf-Zeit „32:15“ → Pace/km/h, Nachtragen
   für gestern, Ernährung mit Zielen (✓/✗), Gewicht, Schritte aus der Android-App
-  (`FitnessNativeApp.onSteps`, Widget-Meldung `reportSteps`), Backup speichern/laden.
+  (`FitnessNativeApp.onSteps`, Widget-Meldung `reportSteps`), Backup speichern/laden;
+  Gewicht: Eingabe auf der Startseite, Runden, Rückfrage beim Ersetzen, Ø/Vorwoche/Hinweis,
+  Wochenliste, Etappen-Feier (nur einmal), Gewichtswerte im Backup.
 - `node test/update_web.js [Ordner]` – spielt im Browser die Android-App nach: Update-Karte im Profil
   ist in Chrome versteckt, in der App sichtbar mit Version, Knopf ruft die App; alte App ohne
   Update-Funktion → Karte versteckt. Speichert `s-profil-update.png`.
-- Alle drei laufen automatisch in `bash werkzeuge/pruefen.sh` mit.
+- Alle laufen automatisch in `bash werkzeuge/pruefen.sh` mit.
 - `node werkzeuge/screenshots.js [Ordner]` – nur die Bildschirmfotos/Fehlerprüfung.
   Braucht Node und Playwright mit Chromium (in Claudes Cloud-Umgebung vorhanden).
 - Android-App: wird bei jeder Änderung von GitHub gebaut (Workflow oben) – ein
@@ -192,6 +218,22 @@ Wichtige Details in `index.html`:
   Kohlenhydrate, Fett, Ziele mit ✓/✗, Tag wählbar); Laufen mit Min:Sek, Pace und km/h,
   Tag wählbar. Neuer Test `test/app_test.js`.
 
+- 23.11.2026 – Tägliches Wiegen mit Trend: ein Wert pro Tag (ersetzen mit Rückfrage), Eingabe
+  auf der Startseite, 7-Tage-Ø groß + Veränderung zur Vorwoche, Tageswert klein, Hinweise
+  (Schwankung / ideales Tempo / zu schnell), neues Diagramm, Wochen-Ø (Mo–So), Etappenziele
+  mit Feier (aus Teil 3 vorgezogen), „verloren“ nach Ø, Daten für den KI-Check-in vorbereitet.
+  Neuer Test `test/gewicht_test.js`. Wiege-Erinnerung: später zusammen mit Teil 3 (eine APK-Runde).
+
+### Test-Liste Gewicht (zum Abhaken am Handy)
+- [ ] Startseite: Gewicht eintragen (z. B. 92,4) → „Heute: 92,4 kg“ klein, groß „Ø …“.
+- [ ] Am selben Tag nochmal eintragen → Rückfrage „Durch … ersetzen?“; „Abbrechen“ lässt den alten Wert.
+- [ ] Ab der zweiten Woche: „… zur Vorwoche“ erscheint (grün bei Abnahme, rot bei Zunahme).
+- [ ] Fortschritt → Gewicht: Zielgewicht speichern → Etappenziele erscheinen.
+- [ ] Diagramm: blasse Punkte (Tage), orange Linie (Ø), blaue gestrichelte Linie (Ziel).
+- [ ] Wochenliste zeigt „KW …“ mit Ø und Veränderung.
+- [ ] Wenn ein Etappenziel erreicht wird: Feier-Fenster erscheint genau einmal.
+- [ ] Backup speichern → laden: alle Gewichtswerte sind wieder da.
+
 ### Test-Liste Teil 1 „Aufräumen“ (zum Abhaken am Handy)
 - [ ] App öffnet direkt auf „Heute → Übersicht“ (kein „Start“-Knopf mehr).
 - [ ] Unten 5 Knöpfe; oben wechseln die Unter-Knöpfe je nach Bereich.
@@ -210,10 +252,12 @@ Wichtige Details in `index.html`:
   - [x] Teil 1 – Aufräumen (Menü, Startseite, Reihenfolge) + Ernährung/Laufen manuell.
   - [ ] Teil 2 – KI-Trainingsplan („Mein Trainingsplan“): Profil (nur lokal), Plan 1 oder
         2 Wochen über die Claude-API (Schlüssel gibt der Nutzer in der App ein, nur lokal),
-        Wochen-Schwerpunkte, Einheiten abhaken mit Schwierigkeit/Wiederholungen, Check-in.
-  - [ ] Teil 3 – Motivation: Serie mit Ruhetagen, Etappenziele (alle 2–3 kg) mit Feier,
+        Wochen-Schwerpunkte, Einheiten abhaken mit Schwierigkeit/Wiederholungen, Check-in
+        (Gewicht dort über `getWeightCheckinData()`: Wochen-Ø + Trend, nicht Tageswert).
+  - [ ] Teil 3 – Motivation: Serie mit Ruhetagen, ~~Etappenziele mit Feier~~ (erledigt 23.11.),
         Bestwerte + „Neuer Rekord!“, KI-Wochenrückblick, 10-Min-Mini-Einheit,
-        „heute ohne Süßes“-Serie, Erinnerungen über die Android-App.
+        „heute ohne Süßes“-Serie, Erinnerungen über die Android-App (Trainingstage **und**
+        morgendliche Wiege-Erinnerung, Uhrzeit wählbar – zusammen in einer APK-Runde).
   - [ ] Teil 4 – Export/Import aller neuen Daten.
 
 - **Update-Suche am Handy testen** (Test-Liste oben). Ungetestet sind: Fenster/Meldungen der App,

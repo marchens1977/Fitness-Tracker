@@ -115,14 +115,58 @@ function pruefe(ok, was) {
     await page.evaluate(() => switchTab('overview'));
     pruefe(await page.locator('#ovNutritionGoals .goal-mark.ok').count() === 1 && await page.locator('#ovNutritionGoals .goal-mark.bad').count() === 1, 'Übersicht zeigt Haken/X der Ernährung');
 
-    console.log('Gewicht:');
+    console.log('Gewicht (täglich, Trend):');
     await page.evaluate(() => switchTab('weight'));
-    await page.fill('#profWeightInput', '92,4');
     await page.fill('#profGoalWeightInput', '85');
-    await page.click('#tab-weight button:has-text("Gewicht speichern")');
-    pruefe((await page.locator('#profCurrentWeight').innerText()) === '92,4 kg', 'Gewicht gespeichert (92,4 kg)');
-    pruefe((await page.locator('#profDiffWeight').innerText()) === '+7,4 kg', 'Rest bis Ziel: +7,4 kg');
-    pruefe((await page.locator('#ovWeight').innerText()) === '92,4 kg', 'Übersicht zeigt Gewicht');
+    await page.click('#tab-weight button:has-text("Ziel speichern")');
+    // Vorgeschichte: 2 Wochen mit Lücken, Trend fällt (direkt in den Speicher geschrieben)
+    await page.evaluate(() => {
+        const t = getLocalDateKey();
+        const vals = { 13: 93.6, 11: 93.4, 9: 93.2, 7: 92.9, 5: 92.8, 4: 92.6, 2: 92.5, 1: 92.0 };
+        const log = Object.keys(vals).map(k => ({ id: 'x' + k, date: shiftDateKey(t, -Number(k)), weightKg: vals[k], bodyFatPct: null }));
+        log.sort((a, b) => a.date.localeCompare(b.date));
+        localStorage.setItem('bodyMetricsLogV2', JSON.stringify(log));
+        switchTab('overview');
+    });
+    pruefe(await page.locator('#ovWeightInput').isVisible(), 'Gewicht direkt auf der Startseite eintragbar');
+    await page.fill('#ovWeightInput', '92,46');
+    await page.click('#ovWeightCard button:has-text("Speichern")');
+    pruefe(await page.evaluate(() => getBodyMetricsLog().filter(m => m.date === getLocalDateKey())[0].weightKg) === 92.5, 'Wert auf eine Nachkommastelle gerundet (92,5)');
+    pruefe((await page.locator('#ovWeightAvg').innerText()).startsWith('Ø 92,'), 'Startseite zeigt groß den 7-Tage-Ø');
+    pruefe((await page.locator('#ovWeightChange').innerText()).includes('zur Vorwoche') && (await page.locator('#ovWeightChange').innerText()).includes('−'), 'Startseite zeigt Veränderung zur Vorwoche (−)');
+    pruefe((await page.locator('#ovWeightDay').innerText()) === 'Heute: 92,5 kg', 'Tageswert klein daneben');
+    pruefe(await page.locator('#ovWeightHints [data-hint="fluctuation"]').count() === 1, 'Hinweis „Normale Tagesschwankung“ (Tag steigt, Trend fällt)');
+    pruefe((await page.locator('#ovWeightProgress').innerText()).includes('Nächstes Etappenziel'), 'Nächstes Etappenziel angezeigt');
+    await page.fill('#ovWeightInput', '92,1');
+    await page.click('#ovWeightCard button:has-text("Speichern")');
+    pruefe(await page.locator('#appModal').isVisible(), 'Zweiter Wert am selben Tag → Rückfrage');
+    await page.click('#appModalNo');
+    pruefe(await page.evaluate(() => getBodyMetricsLog().find(m => m.date === getLocalDateKey()).weightKg) === 92.5, 'Abbrechen → alter Wert bleibt');
+    await page.click('#ovWeightCard button:has-text("Speichern")');
+    await page.click('#appModalYes');
+    const heute = await page.evaluate(() => getBodyMetricsLog().filter(m => m.date === getLocalDateKey()));
+    pruefe(heute.length === 1 && heute[0].weightKg === 92.1, 'Ersetzen → genau ein Wert für heute (92,1)');
+    await page.evaluate(() => switchTab('weight'));
+    pruefe((await page.locator('#profDayWeight').innerText()) === '92,1 kg', 'Gewicht-Seite: Tageswert');
+    pruefe(await page.locator('#weightWeekList .set-row').count() >= 2, 'Wochen-Durchschnitte (Mo–So) aufgelistet');
+    pruefe(await page.locator('#milestoneList .milestone-chip').count() >= 3, 'Etappenziele angezeigt');
+    pruefe(await page.locator('#bodyMetricsHistoryList .set-row').count() === 9, 'Tageswerte-Liste (9 Tage)');
+    const ci = await page.evaluate(() => getWeightCheckinData());
+    pruefe(ci.hasData && ci.trend === 'fällt' && ci.lastWeeks.length >= 2, 'Daten für den KI-Check-in: Ø, Trend, Wochen');
+    // Etappe erreichen → Feier (einmalig)
+    await page.evaluate(() => {
+        const t = getLocalDateKey();
+        const log = getBodyMetricsLog().filter(m => m.date < shiftDateKey(t, -6));
+        localStorage.setItem('bodyMetricsLogV2', JSON.stringify(log));
+        localStorage.removeItem('weightMilestonesV2');
+        renderWeightPage();
+    });
+    await page.fill('#profWeightInput', '90,5');
+    await page.click('#tab-weight button:has-text("Speichern") >> nth=0');
+    pruefe(await page.locator('#appModal').isVisible() && (await page.locator('#appModalTitle').innerText()).includes('Etappenziel'), 'Etappenziel erreicht → Feier');
+    await page.click('#appModalYes');
+    await page.evaluate(() => checkWeightMilestones());
+    pruefe(!(await page.locator('#appModal').isVisible()), 'Feier kommt nur einmal');
 
     console.log('Android-Schrittzähler:');
     await page.evaluate(() => window.FitnessNativeApp.onSteps([{ date: getLocalDateKey(), steps: 8123 }], 'ok'));
@@ -138,11 +182,14 @@ function pruefe(ok, was) {
     pruefe(backup.nutritionGoalsV2 && backup.nutritionGoalsV2.protein.value === 180 && backup.nutritionGoalsV2.protein.mode === 'min', 'Backup enthält Ernährungsziele');
     pruefe(!('waterV2' in backup) && !('waterHistoryV2' in backup), 'Backup ohne Wasser');
     pruefe(Object.values(backup.nutritionHistoryV2)[0][0].carbs === 150.5, 'Backup enthält Makros');
+    pruefe(Array.isArray(backup.bodyMetricsLogV2) && backup.bodyMetricsLogV2.length >= 2 && backup.userGoalWeightV2 === '85.0', 'Backup enthält alle Gewichtswerte und Ziel');
+    pruefe(backup.weightMilestonesV2 && backup.weightMilestonesV2.celebrated >= 1, 'Backup enthält gefeierte Etappen');
     await page.evaluate(() => localStorage.clear());
     await page.setInputFiles('#importFile', { name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
     await page.waitForTimeout(300);
     pruefe(await page.evaluate(() => getNutritionGoals().kcal.value) === 2000, 'Backup laden stellt Ziele wieder her');
     pruefe(await page.evaluate(() => getRuns().length) === 1, 'Backup laden stellt Läufe wieder her');
+    pruefe(await page.evaluate(() => getBodyMetricsLog().length) === backup.bodyMetricsLogV2.length, 'Backup laden stellt Gewichtswerte wieder her');
 
     await browser.close();
     if (errors.length) {

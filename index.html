@@ -783,6 +783,89 @@
 
         .quick-grid button { margin-top: 0; }
 
+        /* Gewicht: Trend-Hinweise, Etappen, Wochen */
+        .weight-hint {
+            margin: 10px 0 0 0;
+            padding: 9px 11px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            background: rgba(110, 155, 255, 0.12);
+            border-left: 3px solid #6e9bff;
+            color: #dce5ff;
+        }
+
+        .weight-hint.ideal {
+            background: rgba(61, 220, 132, 0.12);
+            border-left-color: #3ddc84;
+            color: #d6f7e5;
+        }
+
+        .weight-hint.fast {
+            background: rgba(255, 89, 16, 0.12);
+            border-left-color: #ff5910;
+            color: #ffe2d4;
+        }
+
+        .trend-down { color: #3ddc84 !important; }
+        .trend-up { color: #ff4d4d !important; }
+        .trend-flat { color: #cfd6e6 !important; }
+
+        .milestone-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .milestone-chip {
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            background: #1e263a;
+            border: 1px solid #2c354c;
+            color: #9aa4ba;
+        }
+
+        .milestone-chip.reached {
+            background: rgba(61, 220, 132, 0.15);
+            border-color: #3ddc84;
+            color: #3ddc84;
+            font-weight: 700;
+        }
+
+        .milestone-chip.next {
+            border-color: #ff5910;
+            color: #ff5910;
+            font-weight: 700;
+        }
+
+        /* Fenster in der Seite (Rückfrage, Feier) */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 4, 18, 0.72);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 20px;
+        }
+
+        .modal-box {
+            background: #151c2f;
+            border: 1px solid #2c354c;
+            border-radius: 16px;
+            padding: 20px 18px 16px 18px;
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .modal-icon { font-size: 2.6rem; line-height: 1; margin-bottom: 8px; }
+        .modal-box h2 { margin: 0 0 8px 0; }
+        .modal-box p { margin: 0 0 12px 0; color: #cfd6e6; }
+
         /* Unten: Navigationsleiste */
         .bottom-nav {
             position: fixed;
@@ -880,6 +963,21 @@
             </div>
         </div>
 
+        <div class="card" id="ovWeightCard">
+            <h2>Gewicht (Trend)</h2>
+            <div class="hero-box">
+                <div class="hero-box-value" id="ovWeightAvg">Ø – kg</div>
+                <div class="hero-box-sub" id="ovWeightChange">Noch kein Gewicht eingetragen</div>
+                <div class="muted" id="ovWeightDay" style="font-size: 0.8rem; margin-top: 4px;">Heute noch nicht gewogen</div>
+            </div>
+            <div id="ovWeightHints"></div>
+            <div class="btn-row" style="margin-top: 10px;">
+                <input type="text" id="ovWeightInput" inputmode="decimal" placeholder="Gewicht heute (kg)" style="margin-bottom: 0;">
+                <button type="button" style="max-width: 130px;" onclick="saveWeightFromInput('ovWeightInput')">Speichern</button>
+            </div>
+            <p class="muted" id="ovWeightProgress" style="font-size: 0.82rem; margin: 8px 0 0 0;"></p>
+        </div>
+
         <div class="card">
             <h2>Deine Serie</h2>
             <div class="stats-grid two">
@@ -888,8 +986,8 @@
                     <span class="stat-value" style="color: #ff5910;" id="ovStreak">0 Tage</span>
                 </div>
                 <div class="stat-box">
-                    <span class="stat-label">Gewicht</span>
-                    <span class="stat-value" id="ovWeight">- kg</span>
+                    <span class="stat-label">Längster Rekord</span>
+                    <span class="stat-value" style="color: #6e9bff;" id="ovBestStreak">0 Tage</span>
                 </div>
             </div>
         </div>
@@ -1440,44 +1538,72 @@
     <!-- FORTSCHRITT: GEWICHT (nur Gewicht, keine Körpermaße) -->
     <section class="tab-panel" id="tab-weight">
         <div class="card">
-            <h2>Gewicht & Zielgewicht</h2>
+            <h2>Gewicht (Trend)</h2>
             <div class="stats-grid">
                 <div class="stat-box">
-                    <span class="stat-label">Aktuell</span>
-                    <span class="stat-value" id="profCurrentWeight">- kg</span>
+                    <span class="stat-label">Ø 7 Tage</span>
+                    <span class="stat-value" style="color: #ff5910;" id="profCurrentWeight">- kg</span>
                 </div>
+                <div class="stat-box">
+                    <span class="stat-label">Zur Vorwoche</span>
+                    <span class="stat-value" id="profWeekChange">-</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Tageswert</span>
+                    <span class="stat-value" style="font-size: 1rem;" id="profDayWeight">-</span>
+                </div>
+            </div>
+            <div class="stats-grid">
                 <div class="stat-box">
                     <span class="stat-label">Ziel</span>
                     <span class="stat-value" id="profGoalWeight">- kg</span>
                 </div>
                 <div class="stat-box">
-                    <span class="stat-label">Rest</span>
+                    <span class="stat-label">Rest (Ø)</span>
                     <span class="stat-value" id="profDiffWeight">- kg</span>
                 </div>
+                <div class="stat-box">
+                    <span class="stat-label">Verloren (Ø)</span>
+                    <span class="stat-value" id="profLostWeight">- kg</span>
+                </div>
             </div>
+            <div id="profWeightHints"></div>
 
             <div class="chart-wrap" id="profWeightChartWrap">
                 <canvas id="profWeightChartCanvas" class="chart-canvas"></canvas>
                 <div class="chart-legend">
-                    <span><span class="legend-dot" style="background:#ff5910;"></span>Gewicht</span>
-                    <span><span class="legend-dot" style="background:#6e9bff;"></span>Zielgewicht</span>
+                    <span><span class="legend-dot" style="background:rgba(255,255,255,0.45);"></span>Tageswert</span>
+                    <span><span class="legend-dot" style="background:#ff5910;"></span>Ø 7 Tage</span>
+                    <span><span class="legend-dot" style="background:#6e9bff;"></span>Ziel</span>
                     <span id="profWeightDeltaLabel" style="color:#ff5910; font-weight:600;"></span>
                 </div>
             </div>
 
-            <div class="input-split" style="margin-top: 12px;">
-                <div>
-                    <label class="field-label" for="profWeightInput">Gewicht heute (kg)</label>
-                    <input type="text" id="profWeightInput" inputmode="decimal" placeholder="z. B. 84,5">
-                </div>
-                <div>
-                    <label class="field-label" for="profGoalWeightInput">Zielgewicht (kg)</label>
-                    <input type="text" id="profGoalWeightInput" inputmode="decimal" placeholder="z. B. 75,0">
-                </div>
+            <label class="field-label" for="profWeightInput" style="margin-top: 12px;">Gewicht heute (kg, morgens nüchtern)</label>
+            <div class="btn-row" style="margin-top: 0;">
+                <input type="text" id="profWeightInput" inputmode="decimal" placeholder="z. B. 84,5" style="margin-bottom: 0;">
+                <button type="button" style="max-width: 130px;" onclick="saveWeightFromInput('profWeightInput')">Speichern</button>
             </div>
-            <button type="button" onclick="saveProfileMetrics()">Gewicht speichern</button>
+        </div>
 
-            <h3>Verlauf</h3>
+        <div class="card">
+            <h2>Etappenziele</h2>
+            <p class="muted" id="milestoneInfo" style="font-size: 0.85rem; margin-top: 0;">Zielgewicht festlegen, dann wird der Weg in Etappen von ca. 2–3 kg aufgeteilt.</p>
+            <div class="milestone-row" id="milestoneList"></div>
+            <label class="field-label" for="profGoalWeightInput" style="margin-top: 12px;">Zielgewicht (kg)</label>
+            <div class="btn-row" style="margin-top: 0;">
+                <input type="text" id="profGoalWeightInput" inputmode="decimal" placeholder="z. B. 75,0" style="margin-bottom: 0;">
+                <button type="button" class="btn-secondary" style="max-width: 130px;" onclick="saveGoalWeight()">Ziel speichern</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Wochen-Durchschnitt (Mo–So)</h2>
+            <div id="weightWeekList"></div>
+        </div>
+
+        <div class="card">
+            <h2>Tageswerte</h2>
             <div id="bodyMetricsHistoryList"></div>
         </div>
     </section>
@@ -1536,6 +1662,18 @@
             <span>Profil</span>
         </button>
     </nav>
+</div>
+
+<div class="modal-backdrop" id="appModal" style="display: none;" role="dialog" aria-modal="true">
+    <div class="modal-box">
+        <div class="modal-icon" id="appModalIcon"></div>
+        <h2 id="appModalTitle"></h2>
+        <p id="appModalText"></p>
+        <div class="btn-row">
+            <button type="button" id="appModalYes">OK</button>
+            <button type="button" class="btn-secondary" id="appModalNo">Abbrechen</button>
+        </div>
+    </div>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -3872,10 +4010,10 @@
         txt.textContent = diff >= 0 ? `Tagesziel erreicht! +${formatInt(diff)} Schritte` : `Noch ${formatInt(-diff)} Schritte bis zum Tagesziel`;
         txt.style.color = diff >= 0 ? '#ff5910' : '#b0b0b0';
 
-        const streak = calculateStreaks().current;
-        document.getElementById('ovStreak').textContent = streak === 1 ? '1 Tag' : `${streak} Tage`;
-        const curW = parseFloat(localStorage.getItem('userWeightV2'));
-        document.getElementById('ovWeight').textContent = !isNaN(curW) ? `${curW.toFixed(1).replace('.', ',')} kg` : '- kg';
+        const streaks = calculateStreaks();
+        document.getElementById('ovStreak').textContent = streaks.current === 1 ? '1 Tag' : `${streaks.current} Tage`;
+        document.getElementById('ovBestStreak').textContent = streaks.best === 1 ? '1 Tag' : `${streaks.best} Tage`;
+        renderOverviewWeight();
 
         renderNutritionGoalRows(document.getElementById('ovNutritionGoals'), getNutritionTotals(today), true);
     }
@@ -5455,7 +5593,174 @@
         renderActivityChart();
     }
 
-    /* GEWICHTS-CHART (REUSABLE FÜR PROFIL & MOTIVATION) */
+    /* WEIGHT-CALC-START  (reine Rechenfunktionen, werden von test/gewicht_test.js direkt geprüft)
+       Tägliches Wiegen mit Trend: pro Tag zählt EIN Wert (bei mehreren gewinnt der letzte).
+       - 7-Tage-Ø: Mittel der vorhandenen Werte der letzten 7 Kalendertage (Lücken werden übersprungen)
+       - Wochen-Ø: pro Kalenderwoche Mo–So
+       - Veränderung zur Vorwoche: 7-Tage-Ø jetzt minus 7-Tage-Ø der 7 Tage davor
+       - "Kilo verloren" und Etappenziele richten sich nach dem Ø, nicht nach dem Tageswert */
+    const WeightCalc = (() => {
+        const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+        function toDay(key) {
+            const [y, m, d] = key.split('-').map(Number);
+            return Math.round(Date.UTC(y, m - 1, d) / 86400000);
+        }
+        function fromDay(n) {
+            const d = new Date(n * 86400000);
+            return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+        }
+        function shift(key, delta) { return fromDay(toDay(key) + delta); }
+        function daysBetween(a, b) { return toDay(b) - toDay(a); }
+        function round1(x) { return Math.round(x * 10) / 10; }
+
+        // Tageswerte: [{date, weightKg}] aufsteigend, ein Wert pro Tag (letzter gewinnt)
+        function daily(log) {
+            const map = {};
+            (Array.isArray(log) ? log : []).forEach(e => {
+                if (!e || typeof e.date !== 'string' || !DAY_RE.test(e.date)) return;
+                const w = Number(e.weightKg);
+                if (!isFinite(w) || w <= 0) return;
+                map[e.date] = w;
+            });
+            return Object.keys(map).sort().map(d => ({ date: d, weightKg: map[d] }));
+        }
+
+        // Ø der vorhandenen Werte im Fenster [endKey-len+1 .. endKey]; null, wenn keine Werte
+        function rollingAvg(days, endKey, len = 7) {
+            const start = shift(endKey, -(len - 1));
+            const vals = days.filter(d => d.date >= start && d.date <= endKey).map(d => d.weightKg);
+            if (vals.length === 0) return null;
+            return { avg: vals.reduce((a, b) => a + b, 0) / vals.length, count: vals.length };
+        }
+
+        function weekStart(key) {
+            const n = toDay(key);
+            const dow = (new Date(n * 86400000).getUTCDay() + 6) % 7; // Mo = 0
+            return fromDay(n - dow);
+        }
+
+        function isoWeek(key) {
+            const n = toDay(key);
+            const dow = (new Date(n * 86400000).getUTCDay() + 6) % 7;
+            const thursday = n - dow + 3;
+            const year = new Date(thursday * 86400000).getUTCFullYear();
+            const jan1 = Math.round(Date.UTC(year, 0, 1) / 86400000);
+            return { year, week: Math.floor((thursday - jan1) / 7) + 1 };
+        }
+
+        // Wochen-Ø pro Kalenderwoche (Mo–So), aufsteigend; change = Unterschied zur direkt davor liegenden Woche
+        function weeklyAverages(days) {
+            const groups = {};
+            days.forEach(d => {
+                const ws = weekStart(d.date);
+                (groups[ws] = groups[ws] || []).push(d.weightKg);
+            });
+            const list = Object.keys(groups).sort().map(ws => {
+                const vals = groups[ws];
+                const iw = isoWeek(ws);
+                return { weekStart: ws, weekEnd: shift(ws, 6), week: iw.week, year: iw.year, avg: vals.reduce((a, b) => a + b, 0) / vals.length, count: vals.length, change: null };
+            });
+            list.forEach((w, i) => {
+                const prev = i > 0 ? list[i - 1] : null;
+                if (prev && prev.weekStart === shift(w.weekStart, -7)) w.change = w.avg - prev.avg;
+            });
+            return list;
+        }
+
+        // Etappenziele: Weg vom Start-Ø zum Ziel in gleich große Stücke von ca. 2–3 kg
+        function milestones(startAvg, goal, currentAvg) {
+            if (!(startAvg > 0) || !(goal > 0) || goal > startAvg - 1) return [];
+            const total = startAvg - goal;
+            const n = Math.max(1, Math.round(total / 2.5));
+            const step = total / n;
+            const cur = currentAvg == null ? null : round1(currentAvg);
+            const list = [];
+            for (let i = 1; i <= n; i++) {
+                const target = i === n ? round1(goal) : round1(startAvg - step * i);
+                list.push({ index: i, of: n, targetKg: target, reached: cur !== null && cur <= target });
+            }
+            return list;
+        }
+
+        // Alles für die Anzeige (und später den KI-Check-in) auf einmal
+        function summary(log, todayKey, goal) {
+            const days = daily(log).filter(d => d.date <= todayKey);
+            const goalKg = goal > 0 ? goal : null;
+            if (days.length === 0) return { hasData: false, days, goalKg, hints: [], milestones: [] };
+
+            const last = days[days.length - 1];
+            const anchor = daysBetween(last.date, todayKey) <= 6 ? todayKey : last.date;
+            const cur = rollingAvg(days, anchor);
+            const prev = rollingAvg(days, shift(anchor, -7));
+            const prev2 = rollingAvg(days, shift(anchor, -14));
+            const change = cur && prev ? cur.avg - prev.avg : null;
+            const changePrev = prev && prev2 ? prev.avg - prev2.avg : null;
+
+            const startAvgObj = rollingAvg(days, shift(days[0].date, 6));
+            const startAvg = startAvgObj ? startAvgObj.avg : null;
+            const lostKg = startAvg !== null && cur ? startAvg - cur.avg : null;
+
+            const before = days.length >= 2 ? days[days.length - 2] : null;
+            const todayValue = last.date === todayKey ? last.weightKg : null;
+
+            const hints = [];
+            if (before && last.weightKg > before.weightKg && change !== null && round1(change) < 0) {
+                hints.push({ type: 'fluctuation', text: 'Normale Tagesschwankung – dein Trend geht nach unten.' });
+            }
+            if (change !== null && changePrev !== null && change < -1 && changePrev < -1) {
+                hints.push({ type: 'fast', text: 'Du nimmst seit mehreren Wochen über 1 kg pro Woche ab. Langsamer (ca. 0,5 kg pro Woche) ist meist nachhaltiger.' });
+            } else if (change !== null && change <= -0.3 && change >= -0.7) {
+                hints.push({ type: 'ideal', text: 'Ideales Tempo: rund 0,5 kg pro Woche – genau so geht es nachhaltig weiter!' });
+            }
+
+            return {
+                hasData: true,
+                days,
+                anchor,
+                isCurrent: anchor === todayKey,
+                avg7: cur ? cur.avg : null,
+                avg7Count: cur ? cur.count : 0,
+                prevAvg7: prev ? prev.avg : null,
+                changeVsPrevWeek: change,
+                changePrevWeek: changePrev,
+                todayValue,
+                lastValue: last.weightKg,
+                lastDate: last.date,
+                startAvg,
+                lostKg,
+                goalKg,
+                restKg: goalKg !== null && cur ? cur.avg - goalKg : null,
+                weeks: weeklyAverages(days),
+                hints,
+                milestones: milestones(startAvg, goalKg, cur ? cur.avg : null)
+            };
+        }
+
+        // Für den KI-Check-in (Teil 2): Wochen-Ø und Trend statt eines einzelnen Tageswerts
+        function checkinSummary(log, todayKey, goal) {
+            const s = summary(log, todayKey, goal);
+            if (!s.hasData) return { hasData: false };
+            const r = v => (v === null || v === undefined ? null : round1(v));
+            const trend = s.changeVsPrevWeek === null ? 'unbekannt'
+                : (s.changeVsPrevWeek <= -0.1 ? 'fällt' : (s.changeVsPrevWeek >= 0.1 ? 'steigt' : 'stabil'));
+            return {
+                hasData: true,
+                avg7Kg: r(s.avg7),
+                valuesInLast7Days: s.avg7Count,
+                changeVsPrevWeekKg: r(s.changeVsPrevWeek),
+                trend,
+                lastWeeks: s.weeks.slice(-4).map(w => ({ kw: w.week, avgKg: r(w.avg), changeKg: r(w.change), values: w.count })),
+                startAvgKg: r(s.startAvg),
+                lostKg: r(s.lostKg),
+                goalKg: r(s.goalKg)
+            };
+        }
+
+        return { daily, rollingAvg, weekStart, isoWeek, weeklyAverages, milestones, summary, checkinSummary, shift, round1 };
+    })();
+    /* WEIGHT-CALC-END */
+
+    /* GEWICHTS-DIAGRAMM: Tageswerte als blasse Punkte, 7-Tage-Ø als Linie, Ziel gestrichelt (ca. 8 Wochen) */
     function renderWeightChart(canvasId, deltaLabelId) {
         const canvas = document.getElementById(canvasId);
         const deltaEl = document.getElementById(deltaLabelId);
@@ -5464,21 +5769,18 @@
         const dpr = window.devicePixelRatio || 1;
         const parentW = canvas.parentElement ? Math.max(150, canvas.parentElement.clientWidth - 16) : 320;
         const cssWidth = parentW > 60 ? parentW : 320;
-        const cssHeight = 195;
-
+        const cssHeight = 210;
         canvas.width = Math.round(cssWidth * dpr);
         canvas.height = Math.round(cssHeight * dpr);
         canvas.style.width = `${cssWidth}px`;
         canvas.style.height = `${cssHeight}px`;
-
         const ctx = canvas.getContext('2d');
         ctx.scale(dpr, dpr);
         ctx.clearRect(0, 0, cssWidth, cssHeight);
 
-        const rawLog = getBodyMetricsLog().slice().sort((a, b) => a.date.localeCompare(b.date));
+        const sum = getWeightSummary();
         const goalW = getGoalWeight();
-
-        if (rawLog.length === 0) {
+        if (!sum.hasData) {
             ctx.fillStyle = '#888888';
             ctx.font = '13px -apple-system, BlinkMacSystemFont, sans-serif';
             ctx.textAlign = 'center';
@@ -5488,39 +5790,35 @@
             return;
         }
 
-        const points = rawLog.slice(-24);
-        const firstW = points[0].weightKg;
-        const lastW = points[points.length - 1].weightKg;
-        const change = lastW - firstW;
+        const days = sum.days;
+        const endKey = sum.anchor;
+        const firstKey = days[0].date;
+        let startKey = WeightCalc.shift(endKey, -55);
+        if (startKey < firstKey) startKey = firstKey;
+        const spanDays = Math.max(1, Math.round((new Date(endKey) - new Date(startKey)) / 86400000));
 
-        if (deltaEl) {
-            if (points.length >= 2) {
-                const sign = change > 0 ? '+' : '';
-                deltaEl.textContent = `Veränderung: ${sign}${change.toFixed(1).replace('.', ',')} kg`;
-                deltaEl.style.color = change <= 0 ? '#ff5910' : '#cf6679';
-            } else {
-                deltaEl.textContent = `Startwert: ${lastW.toFixed(1).replace('.', ',')} kg`;
-                deltaEl.style.color = '#ff5910';
-            }
+        const inRange = days.filter(d => d.date >= startKey && d.date <= endKey);
+        const avgPts = [];
+        for (let i = 0; i <= spanDays; i++) {
+            const key = WeightCalc.shift(startKey, i);
+            const r = WeightCalc.rollingAvg(days, key);
+            avgPts.push(r ? { i, key, v: r.avg } : null);
         }
 
-        const allValues = points.map(p => p.weightKg).concat(isNaN(goalW) ? [] : [goalW]);
-        const rawMin = Math.min(...allValues);
-        const rawMax = Math.max(...allValues);
+        const values = inRange.map(d => d.weightKg).concat(avgPts.filter(Boolean).map(p => p.v));
+        if (!isNaN(goalW)) values.push(goalW);
+        const rawMin = Math.min(...values);
+        const rawMax = Math.max(...values);
         const span = Math.max(2, rawMax - rawMin);
-        const yMin = Math.floor((rawMin - span * 0.18) * 2) / 2;
-        const yMax = Math.ceil((rawMax + span * 0.18) * 2) / 2;
+        const yMin = Math.floor((rawMin - span * 0.12) * 2) / 2;
+        const yMax = Math.ceil((rawMax + span * 0.12) * 2) / 2;
 
-        const padLeft = 46;
-        const padRight = 16;
-        const padTop = 18;
-        const padBottom = 26;
+        const padLeft = 42, padRight = 14, padTop = 16, padBottom = 24;
         const plotW = cssWidth - padLeft - padRight;
         const plotH = cssHeight - padTop - padBottom;
-
-        function yForWeight(w) {
-            return padTop + plotH - ((w - yMin) / (yMax - yMin)) * plotH;
-        }
+        const xFor = i => padLeft + (spanDays === 0 ? plotW / 2 : (i / spanDays) * plotW);
+        const yFor = w => padTop + plotH - ((w - yMin) / (yMax - yMin)) * plotH;
+        const idxOf = key => Math.round((new Date(key) - new Date(startKey)) / 86400000);
 
         ctx.strokeStyle = '#20283c';
         ctx.lineWidth = 1;
@@ -5528,107 +5826,83 @@
         ctx.font = '10px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-
-        const gridCount = 4;
-        for (let g = 0; g <= gridCount; g++) {
-            const wVal = yMin + ((yMax - yMin) * (g / gridCount));
-            const y = yForWeight(wVal);
+        for (let g = 0; g <= 4; g++) {
+            const wVal = yMin + (yMax - yMin) * (g / 4);
+            const y = yFor(wVal);
             ctx.beginPath();
             ctx.moveTo(padLeft, y);
             ctx.lineTo(padLeft + plotW, y);
             ctx.stroke();
-            ctx.fillText(`${wVal.toFixed(1).replace('.', ',')}`, padLeft - 6, y);
+            ctx.fillText(wVal.toFixed(1).replace('.', ','), padLeft - 6, y);
         }
 
         if (!isNaN(goalW)) {
-            const goalY = yForWeight(goalW);
             ctx.save();
             ctx.strokeStyle = '#6e9bff';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([5, 4]);
             ctx.beginPath();
-            ctx.moveTo(padLeft, goalY);
-            ctx.lineTo(padLeft + plotW, goalY);
+            ctx.moveTo(padLeft, yFor(goalW));
+            ctx.lineTo(padLeft + plotW, yFor(goalW));
             ctx.stroke();
             ctx.restore();
         }
 
-        const coords = points.map((p, idx) => {
-            const x = points.length === 1
-                ? padLeft + plotW / 2
-                : padLeft + (idx / (points.length - 1)) * plotW;
-            const y = yForWeight(p.weightKg);
-            return { x, y, weightKg: p.weightKg, date: p.date };
+        // Tageswerte: blasse Punkte
+        inRange.forEach(d => {
+            ctx.beginPath();
+            ctx.arc(xFor(idxOf(d.date)), yFor(d.weightKg), 3, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+            ctx.fill();
         });
 
-        if (coords.length >= 2) {
-            const grad = ctx.createLinearGradient(0, padTop, 0, padTop + plotH);
-            grad.addColorStop(0, 'rgba(255, 89, 16, 0.28)');
-            grad.addColorStop(1, 'rgba(255, 89, 16, 0.0)');
+        // 7-Tage-Ø: deutliche Linie (Unterbrechung, wenn im Fenster keine Werte liegen)
+        ctx.save();
+        ctx.strokeStyle = '#ff5910';
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        let open = false;
+        avgPts.forEach(p => {
+            if (!p) { open = false; return; }
+            if (!open) { ctx.moveTo(xFor(p.i), yFor(p.v)); open = true; }
+            else ctx.lineTo(xFor(p.i), yFor(p.v));
+        });
+        ctx.stroke();
+        ctx.restore();
 
+        const lastAvg = avgPts[avgPts.length - 1];
+        if (lastAvg) {
             ctx.beginPath();
-            ctx.moveTo(coords[0].x, padTop + plotH);
-            coords.forEach(c => ctx.lineTo(c.x, c.y));
-            ctx.lineTo(coords[coords.length - 1].x, padTop + plotH);
-            ctx.closePath();
-            ctx.fillStyle = grad;
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.strokeStyle = '#ff5910';
-            ctx.lineWidth = 2.5;
-            ctx.lineJoin = 'round';
-            coords.forEach((c, idx) => {
-                if (idx === 0) ctx.moveTo(c.x, c.y);
-                else ctx.lineTo(c.x, c.y);
-            });
-            ctx.stroke();
-        }
-
-        const xLabelStep = coords.length <= 6 ? 1 : Math.ceil(coords.length / 5);
-        coords.forEach((c, idx) => {
-            const isLast = idx === coords.length - 1;
-            const isFirst = idx === 0;
-
-            ctx.beginPath();
-            ctx.arc(c.x, c.y, isLast ? 5 : 3.5, 0, Math.PI * 2);
-            ctx.fillStyle = isLast ? '#ffffff' : '#ff5910';
+            ctx.arc(xFor(lastAvg.i), yFor(lastAvg.v), 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
             ctx.fill();
             ctx.lineWidth = 2;
             ctx.strokeStyle = '#ff5910';
             ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 11px -apple-system, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('Ø ' + lastAvg.v.toFixed(1).replace('.', ','), xFor(lastAvg.i) - 4, Math.max(padTop + 10, yFor(lastAvg.v) - 8));
+        }
 
-            if (isFirst || isLast || coords.length <= 7) {
-                ctx.fillStyle = isLast ? '#ffffff' : '#ff5910';
-                ctx.font = isLast ? 'bold 11px -apple-system, sans-serif' : '10px -apple-system, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'bottom';
-                const labelY = Math.max(padTop + 10, c.y - 7);
-                ctx.fillText(c.weightKg.toFixed(1).replace('.', ','), c.x, labelY);
-            }
+        ctx.fillStyle = '#888888';
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.textBaseline = 'top';
+        const labelCount = Math.min(5, spanDays + 1);
+        for (let k = 0; k < labelCount; k++) {
+            const i = labelCount === 1 ? 0 : Math.round((k / (labelCount - 1)) * spanDays);
+            ctx.textAlign = k === 0 ? 'left' : (k === labelCount - 1 ? 'right' : 'center');
+            ctx.fillText(formatShortDate(WeightCalc.shift(startKey, i)), xFor(i), padTop + plotH + 7);
+        }
 
-            if ((idx % xLabelStep === 0 && (coords.length - 1 - idx) >= xLabelStep) || isLast) {
-                ctx.fillStyle = '#888888';
-                ctx.font = '10px -apple-system, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                ctx.fillText(formatShortDate(c.date), c.x, padTop + plotH + 7);
-            }
-        });
+        // Keine Zahl unter dem Diagramm: „Verloren (Ø)“ oben ist die eine maßgebliche Angabe
+        if (deltaEl) deltaEl.textContent = '';
     }
 
     /* REITER 9: PERSÖNLICHE DATEN & VERLAUF */
-    function syncBodyFatToLatestMetric() {
-        const log = getBodyMetricsLog();
-        if (log.length === 0) return;
-        const latest = log[log.length - 1];
-        if (typeof latest.bodyFatPct === 'number') {
-            localStorage.setItem('userBodyFatV2', latest.bodyFatPct.toFixed(1));
-        } else {
-            localStorage.removeItem('userBodyFatV2');
-        }
-    }
-
     function getGoalWeight() {
         const v = parseFloat(localStorage.getItem('userGoalWeightV2'));
         return (!isNaN(v) && v > 0) ? v : NaN;
@@ -5643,51 +5917,21 @@
         }
     }
 
-    function recordBodyMetric(weightKg, bodyFatPct, dateKey) {
-        const day = dateKey || getLocalDateKey();
-        const log = getBodyMetricsLog();
-        const wRounded = Number(weightKg.toFixed(1));
-        const bfRounded = !isNaN(bodyFatPct) ? Number(bodyFatPct.toFixed(1)) : null;
-
-        // Gleicher Tag, gleiches Gewicht: vorhandenen Eintrag ergänzen statt zu duplizieren
-        const same = log.find(m => m.date === day && m.weightKg === wRounded);
-        if (same) {
-            if (bfRounded !== null) same.bodyFatPct = bfRounded;
-            localStorage.setItem('bodyMetricsLogV2', JSON.stringify(log));
-            return false;
-        }
-
-        log.push({
-            id: `bm_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-            date: day,
-            weightKg: wRounded,
-            bodyFatPct: bfRounded
-        });
-        log.sort((x, y) => String(x.date).localeCompare(String(y.date)));
+    // Tageswert löschen (alle Einträge dieses Tages)
+    function deleteWeightDay(dateKey) {
+        const log = getBodyMetricsLog().filter(item => item.date !== dateKey);
         localStorage.setItem('bodyMetricsLogV2', JSON.stringify(log));
-        return true;
-    }
-
-    function deleteBodyMetric(id) {
-        const removedMetric = getBodyMetricsLog().find(item => item.id === id);
-        const log = getBodyMetricsLog().filter(item => item.id !== id);
-        localStorage.setItem('bodyMetricsLogV2', JSON.stringify(log));
-        if (removedMetric) unmarkDateIfEmpty(removedMetric.date);
-        if (log.length > 0) {
-            const latest = log[log.length - 1];
-            localStorage.setItem('userWeightV2', latest.weightKg.toFixed(1));
-            if (typeof latest.bodyFatPct === 'number') {
-                localStorage.setItem('userBodyFatV2', latest.bodyFatPct.toFixed(1));
-            } else {
-                localStorage.removeItem('userBodyFatV2');
-            }
-        } else {
-            localStorage.removeItem('userWeightV2');
-            localStorage.removeItem('userBodyFatV2');
-        }
+        updateLatestWeight();
+        unmarkDateIfEmpty(dateKey);
         renderWeightPage();
         renderOverview();
-        showToast('Messwert gelöscht.');
+        showToast('Tageswert gelöscht.');
+    }
+
+    function updateLatestWeight() {
+        const days = WeightCalc.daily(getBodyMetricsLog());
+        if (days.length > 0) localStorage.setItem('userWeightV2', days[days.length - 1].weightKg.toFixed(1));
+        else localStorage.removeItem('userWeightV2');
     }
 
     function calculateAgeFromDob(dobString) {
@@ -5720,37 +5964,309 @@
         showToast(`Geburtsdatum gespeichert (${age} Jahre).`);
     }
 
-    // Gewicht speichern (nur Gewicht – keine Körpermaße, kein Körperfett; Grundsatz des Nutzers)
-    function saveProfileMetrics() {
-        const w = parseDecimal(document.getElementById('profWeightInput').value);
-        const goalW = parseDecimal(document.getElementById('profGoalWeightInput').value);
-        const goalRaw = String(document.getElementById('profGoalWeightInput').value || '').trim();
+    /* GEWICHT: täglich wiegen, ein Wert pro Tag (nur Gewicht – keine Maße, kein Körperfett) */
+    function getWeightSummary() {
+        return WeightCalc.summary(getBodyMetricsLog(), getLocalDateKey(), getGoalWeight());
+    }
 
-        let somethingSaved = false;
-        if (!isNaN(w) && w >= 35 && w <= 350) {
-            localStorage.setItem('userWeightV2', w.toFixed(1));
-            recordBodyMetric(w, NaN);
-            markDateActive(getLocalDateKey());
-            somethingSaved = true;
-        }
-        if (!isNaN(goalW) && goalW >= 35 && goalW <= 250) {
-            const changed = localStorage.getItem('userGoalWeightV2') !== goalW.toFixed(1);
-            localStorage.setItem('userGoalWeightV2', goalW.toFixed(1));
-            if (changed) somethingSaved = true;
-        } else if (goalRaw !== '') {
-            showToast('Zielgewicht bitte zwischen 35 und 250 kg.');
-            return;
-        }
+    // Für den KI-Check-in (Teil 2): Wochen-Ø und Trend statt eines Tageswerts
+    function getWeightCheckinData() {
+        return WeightCalc.checkinSummary(getBodyMetricsLog(), getLocalDateKey(), getGoalWeight());
+    }
 
-        if (!somethingSaved) {
+    function fmtKg(v) {
+        return `${v.toFixed(1).replace('.', ',')} kg`;
+    }
+
+    function fmtChange(v) {
+        const r = WeightCalc.round1(v);
+        if (r === 0) return '±0,0 kg';
+        return `${r > 0 ? '+' : '−'}${Math.abs(r).toFixed(1).replace('.', ',')} kg`;
+    }
+
+    function trendClass(v) {
+        const r = WeightCalc.round1(v);
+        return r < 0 ? 'trend-down' : (r > 0 ? 'trend-up' : 'trend-flat');
+    }
+
+    function showModal(opts) {
+        const box = document.getElementById('appModal');
+        document.getElementById('appModalIcon').textContent = opts.icon || '';
+        document.getElementById('appModalTitle').textContent = opts.title || '';
+        document.getElementById('appModalText').textContent = opts.text || '';
+        const yes = document.getElementById('appModalYes');
+        const no = document.getElementById('appModalNo');
+        yes.textContent = opts.yes || 'OK';
+        no.textContent = opts.no || 'Abbrechen';
+        no.style.display = opts.onYes ? '' : 'none';
+        const close = () => { box.style.display = 'none'; };
+        yes.onclick = () => { close(); if (opts.onYes) opts.onYes(); };
+        no.onclick = close;
+        box.style.display = 'flex';
+    }
+
+    function setDailyWeight(dateKey, weightKg) {
+        const log = getBodyMetricsLog().filter(m => m.date !== dateKey);
+        log.push({ id: `bm_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, date: dateKey, weightKg, bodyFatPct: null });
+        log.sort((x, y) => String(x.date).localeCompare(String(y.date)));
+        localStorage.setItem('bodyMetricsLogV2', JSON.stringify(log));
+        updateLatestWeight();
+        markDateActive(dateKey);
+    }
+
+    function saveWeightFromInput(inputId) {
+        const field = document.getElementById(inputId);
+        const w = parseDecimal(field.value);
+        if (isNaN(w) || w < 35 || w > 350) {
             showToast('Bitte gültiges Gewicht eingeben (35–350 kg).');
             return;
         }
+        const value = WeightCalc.round1(w);
+        const today = getLocalDateKey();
+        const existing = WeightCalc.daily(getBodyMetricsLog()).find(d => d.date === today);
+        const commit = () => {
+            setDailyWeight(today, value);
+            field.value = '';
+            renderWeightPage();
+            renderOverview();
+            showToast(`Gewicht gespeichert: ${fmtKg(value)}`);
+            checkWeightMilestones();
+        };
+        if (existing && existing.weightKg === value) {
+            field.value = '';
+            showToast('Dieser Wert ist für heute schon eingetragen.');
+            return;
+        }
+        if (existing) {
+            showModal({
+                icon: '⚖️',
+                title: 'Heute schon gewogen',
+                text: `Für heute steht schon ${fmtKg(existing.weightKg)}. Durch ${fmtKg(value)} ersetzen?`,
+                yes: 'Ersetzen',
+                no: 'Abbrechen',
+                onYes: commit
+            });
+            return;
+        }
+        commit();
+    }
 
-        document.getElementById('profWeightInput').value = '';
+    function saveGoalWeight() {
+        const raw = String(document.getElementById('profGoalWeightInput').value || '').trim();
+        const g = parseDecimal(raw);
+        if (isNaN(g) || g < 35 || g > 250) {
+            showToast('Zielgewicht bitte zwischen 35 und 250 kg.');
+            return;
+        }
+        localStorage.setItem('userGoalWeightV2', g.toFixed(1));
+        resetMilestoneState();
+        document.getElementById('profGoalWeightInput').blur();
         renderWeightPage();
         renderOverview();
-        showToast('Gewicht gespeichert.');
+        showToast('Zielgewicht gespeichert.');
+    }
+
+    // Etappenziele: bereits gefeierte merken, damit jede Feier nur einmal kommt
+    function getMilestoneState() {
+        try {
+            const st = JSON.parse(localStorage.getItem('weightMilestonesV2'));
+            if (st && typeof st === 'object') return st;
+        } catch (e) {}
+        return null;
+    }
+
+    function resetMilestoneState() {
+        // Neues Ziel: schon erreichte Etappen nicht nochmal feiern
+        const sum = getWeightSummary();
+        const reached = sum.hasData ? sum.milestones.filter(m => m.reached).length : 0;
+        localStorage.setItem('weightMilestonesV2', JSON.stringify({ goalKg: sum.goalKg, startKg: sum.startAvg, celebrated: reached }));
+    }
+
+    function checkWeightMilestones() {
+        const sum = getWeightSummary();
+        if (!sum.hasData || sum.milestones.length === 0) return;
+        let st = getMilestoneState();
+        if (!st || st.goalKg !== sum.goalKg) {
+            st = { goalKg: sum.goalKg, startKg: sum.startAvg, celebrated: 0 };
+        }
+        const reached = sum.milestones.filter(m => m.reached).length;
+        if (reached > (st.celebrated || 0)) {
+            const m = sum.milestones[reached - 1];
+            const isGoal = m.index === m.of;
+            showModal({
+                icon: isGoal ? '🏆' : '🎉',
+                title: isGoal ? 'Zielgewicht erreicht!' : 'Etappenziel erreicht!',
+                text: isGoal
+                    ? `Dein Durchschnitt liegt bei ${fmtKg(m.targetKg)} oder darunter. Riesig – du hast dein Ziel geschafft!`
+                    : `Dein 7-Tage-Durchschnitt hat ${fmtKg(m.targetKg)} erreicht – Etappe ${m.index} von ${m.of}. Stark, weiter so!`,
+                yes: 'Danke!'
+            });
+            st.celebrated = reached;
+        }
+        localStorage.setItem('weightMilestonesV2', JSON.stringify(st));
+    }
+
+    function renderWeightHints(container, sum) {
+        container.innerHTML = '';
+        (sum.hasData ? sum.hints : []).forEach(h => {
+            const p = document.createElement('p');
+            p.className = 'weight-hint ' + h.type;
+            p.dataset.hint = h.type;
+            p.textContent = h.text;
+            container.appendChild(p);
+        });
+    }
+
+    function renderOverviewWeight() {
+        const sum = getWeightSummary();
+        const avgEl = document.getElementById('ovWeightAvg');
+        const chEl = document.getElementById('ovWeightChange');
+        const dayEl = document.getElementById('ovWeightDay');
+        const progEl = document.getElementById('ovWeightProgress');
+        renderWeightHints(document.getElementById('ovWeightHints'), sum);
+        chEl.className = 'hero-box-sub';
+        if (!sum.hasData) {
+            avgEl.textContent = 'Ø – kg';
+            chEl.textContent = 'Wiege dich morgens nüchtern und trag den Wert hier ein.';
+            dayEl.textContent = 'Heute noch nicht gewogen';
+            progEl.textContent = '';
+            return;
+        }
+        avgEl.textContent = `Ø ${fmtKg(sum.avg7)}`;
+        if (sum.changeVsPrevWeek !== null) {
+            chEl.textContent = `${fmtChange(sum.changeVsPrevWeek)} zur Vorwoche`;
+            chEl.classList.add(trendClass(sum.changeVsPrevWeek));
+        } else {
+            chEl.textContent = 'Vorwoche: noch keine Werte zum Vergleich';
+        }
+        dayEl.textContent = sum.todayValue !== null
+            ? `Heute: ${fmtKg(sum.todayValue)}`
+            : (sum.isCurrent ? 'Heute noch nicht gewogen' : `Letzter Wert ${formatDateAm(sum.lastDate)}: ${fmtKg(sum.lastValue)}`);
+
+        const parts = [];
+        if (sum.lostKg !== null && WeightCalc.round1(sum.lostKg) > 0) parts.push(`Seit Start (Ø) verloren: ${fmtKg(sum.lostKg)}`);
+        const next = sum.milestones.find(m => !m.reached);
+        if (next) parts.push(`Nächstes Etappenziel: ${fmtKg(next.targetKg)} (noch ${fmtKg(Math.max(0, sum.avg7 - next.targetKg))})`);
+        else if (sum.milestones.length > 0) parts.push('🏆 Zielgewicht erreicht!');
+        progEl.textContent = parts.join(' · ');
+    }
+
+    function renderWeightPage() {
+        const sum = getWeightSummary();
+        const goalW = getGoalWeight();
+        const set = (id, text, cls) => {
+            const el = document.getElementById(id);
+            el.textContent = text;
+            el.classList.remove('trend-down', 'trend-up', 'trend-flat');
+            if (cls) el.classList.add(cls);
+        };
+
+        set('profGoalWeight', !isNaN(goalW) ? fmtKg(goalW) : '- kg');
+        const goalField = document.getElementById('profGoalWeightInput');
+        if (document.activeElement !== goalField) {
+            goalField.value = !isNaN(goalW) ? goalW.toFixed(1).replace('.', ',') : '';
+        }
+        if (sum.hasData) {
+            set('profCurrentWeight', fmtKg(sum.avg7));
+            set('profWeekChange', sum.changeVsPrevWeek !== null ? fmtChange(sum.changeVsPrevWeek) : '-', sum.changeVsPrevWeek !== null ? trendClass(sum.changeVsPrevWeek) : '');
+            set('profDayWeight', sum.todayValue !== null ? fmtKg(sum.todayValue) : 'heute –');
+            set('profDiffWeight', sum.restKg !== null ? fmtChange(sum.restKg) : '- kg');
+            set('profLostWeight', sum.lostKg !== null ? fmtKg(Math.max(0, sum.lostKg)) : '- kg');
+        } else {
+            ['profCurrentWeight', 'profDiffWeight', 'profLostWeight'].forEach(id => set(id, '- kg'));
+            set('profWeekChange', '-');
+            set('profDayWeight', '-');
+        }
+        renderWeightHints(document.getElementById('profWeightHints'), sum);
+        renderWeightChart('profWeightChartCanvas', 'profWeightDeltaLabel');
+
+        // Etappenziele
+        const mList = document.getElementById('milestoneList');
+        const mInfo = document.getElementById('milestoneInfo');
+        mList.innerHTML = '';
+        const ms = sum.hasData ? sum.milestones : [];
+        if (ms.length === 0) {
+            mInfo.textContent = isNaN(goalW)
+                ? 'Zielgewicht festlegen, dann wird der Weg in Etappen von ca. 2–3 kg aufgeteilt.'
+                : (sum.hasData ? 'Dein Ziel liegt (fast) beim Start-Durchschnitt – keine Etappen nötig.' : 'Trag dein erstes Gewicht ein, dann entstehen die Etappen.');
+        } else {
+            const done = ms.filter(m => m.reached).length;
+            mInfo.textContent = `Start-Ø ${fmtKg(sum.startAvg)} → Ziel ${fmtKg(sum.goalKg)}: ${done} von ${ms.length} Etappen geschafft (gemessen am 7-Tage-Ø).`;
+            let nextMarked = false;
+            ms.forEach(m => {
+                const chip = document.createElement('span');
+                chip.className = 'milestone-chip';
+                if (m.reached) chip.classList.add('reached');
+                else if (!nextMarked) { chip.classList.add('next'); nextMarked = true; }
+                chip.textContent = `${m.reached ? '✓ ' : ''}${fmtKg(m.targetKg)}`;
+                mList.appendChild(chip);
+            });
+        }
+
+        // Wochen-Durchschnitt (neueste zuerst, max. 8)
+        const wList = document.getElementById('weightWeekList');
+        wList.innerHTML = '';
+        const weeks = sum.hasData ? sum.weeks.slice(-8).reverse() : [];
+        if (weeks.length === 0) {
+            const p = document.createElement('p');
+            p.className = 'muted';
+            p.textContent = 'Noch keine Werte.';
+            wList.appendChild(p);
+        }
+        weeks.forEach(w => {
+            const row = document.createElement('div');
+            row.className = 'set-row';
+            const left = document.createElement('div');
+            const badge = document.createElement('span');
+            badge.className = 'set-badge';
+            badge.textContent = `KW ${w.week}`;
+            const txt = document.createElement('span');
+            txt.textContent = `${formatShortDate(w.weekStart)}–${formatShortDate(w.weekEnd)} · Ø ${fmtKg(w.avg)} (${w.count} ${w.count === 1 ? 'Wert' : 'Werte'})`;
+            left.append(badge, txt);
+            const right = document.createElement('span');
+            right.style.fontWeight = '700';
+            right.style.fontSize = '0.85rem';
+            if (w.change !== null) {
+                right.textContent = fmtChange(w.change);
+                right.className = trendClass(w.change);
+            } else {
+                right.textContent = '–';
+                right.className = 'trend-flat';
+            }
+            row.append(left, right);
+            wList.appendChild(row);
+        });
+
+        // Tageswerte (neueste zuerst, 14)
+        const list = document.getElementById('bodyMetricsHistoryList');
+        list.innerHTML = '';
+        const days = sum.hasData ? sum.days.slice(-14).reverse() : [];
+        if (days.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'muted';
+            empty.textContent = 'Noch kein Gewicht eingetragen.';
+            list.appendChild(empty);
+            return;
+        }
+        days.forEach(entry => {
+            const row = document.createElement('div');
+            row.className = 'set-row';
+            const left = document.createElement('div');
+            const badge = document.createElement('span');
+            badge.className = 'set-badge';
+            badge.textContent = formatShortDate(entry.date);
+            const text = document.createElement('span');
+            text.textContent = fmtKg(entry.weightKg);
+            left.append(badge, text);
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.className = 'del-small';
+            del.textContent = '×';
+            del.setAttribute('aria-label', `Wert vom ${formatShortDate(entry.date)} löschen`);
+            del.onclick = () => deleteWeightDay(entry.date);
+            row.append(left, del);
+            list.appendChild(row);
+        });
     }
 
     function renderProfile() {
@@ -5766,61 +6282,6 @@
             document.getElementById('profileAgeDisplay').textContent = '- Jahre';
             document.getElementById('profileDobHint').textContent = 'Geburtsdatum hinterlegen, damit dein Alter automatisch mitwächst.';
         }
-    }
-
-    function renderWeightPage() {
-        const curW = parseFloat(localStorage.getItem('userWeightV2'));
-        const goalW = getGoalWeight();
-
-        document.getElementById('profCurrentWeight').textContent = !isNaN(curW) ? `${curW.toFixed(1).replace('.', ',')} kg` : '- kg';
-        document.getElementById('profGoalWeight').textContent = !isNaN(goalW) ? `${goalW.toFixed(1).replace('.', ',')} kg` : '- kg';
-        const goalField = document.getElementById('profGoalWeightInput');
-        if (document.activeElement !== goalField) {
-            goalField.value = !isNaN(goalW) ? goalW.toFixed(1).replace('.', ',') : '';
-        }
-        let diffText = '- kg';
-        if (!isNaN(curW) && !isNaN(goalW)) {
-            const diff = curW - goalW;
-            diffText = `${diff > 0 ? '+' : ''}${diff.toFixed(1).replace('.', ',')} kg`;
-        }
-        document.getElementById('profDiffWeight').textContent = diffText;
-
-        renderWeightChart('profWeightChartCanvas', 'profWeightDeltaLabel');
-
-        const list = document.getElementById('bodyMetricsHistoryList');
-        list.innerHTML = '';
-        const log = getBodyMetricsLog();
-
-        if (log.length === 0) {
-            const empty = document.createElement('p');
-            empty.className = 'muted';
-            empty.textContent = 'Noch kein Gewicht eingetragen.';
-            list.appendChild(empty);
-            return;
-        }
-
-        log.slice(-12).reverse().forEach(entry => {
-            const row = document.createElement('div');
-            row.className = 'set-row';
-
-            const left = document.createElement('div');
-            const badge = document.createElement('span');
-            badge.className = 'set-badge';
-            badge.textContent = formatShortDate(entry.date);
-
-            const text = document.createElement('span');
-            text.textContent = `${String(entry.weightKg).replace('.', ',')} kg`;
-            left.append(badge, text);
-
-            const del = document.createElement('button');
-            del.type = 'button';
-            del.className = 'del-small';
-            del.textContent = '×';
-            del.onclick = () => deleteBodyMetric(entry.id);
-
-            row.append(left, del);
-            list.appendChild(row);
-        });
     }
 
     /* REITER 8: MOTIVATION, STREAKS, WAAGE & ABZEICHEN */
@@ -6025,6 +6486,7 @@
             userBodyFatV2: localStorage.getItem('userBodyFatV2'),
             userGoalWeightV2: localStorage.getItem('userGoalWeightV2'),
             bodyMetricsLogV2: getBodyMetricsLog(),
+            weightMilestonesV2: getMilestoneState(),
             personalWhyV2: localStorage.getItem('personalWhyV2')
         };
         const fileName = `fitness_backup_${getLocalDateKey()}.json`;
@@ -6066,6 +6528,7 @@
         ['userBodyFatV2', 'string'],
         ['userGoalWeightV2', 'string'],
         ['bodyMetricsLogV2', 'array'],
+        ['weightMilestonesV2', 'object'],
         ['personalWhyV2', 'string']
     ];
 

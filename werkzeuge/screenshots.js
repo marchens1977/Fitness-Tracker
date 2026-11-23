@@ -21,6 +21,15 @@ const { chromium } = require('playwright');
     await page.evaluate(() => {
         const t = getLocalDateKey();
         localStorage.setItem('stepsHistoryV2', JSON.stringify({ [t]: 6400, [shiftDateKey(t, -1)]: 11200 }));
+        // Beispiel-Gewicht: 5 Wochen, manche Tage fehlen, Trend ca. −0,5 kg/Woche, Tageswerte schwanken
+        const log = [];
+        for (let i = 34; i >= 0; i--) {
+            if (i % 4 === 2) continue;
+            const w = 95 - ((34 - i) / 7) * 0.5 + (i % 3 === 0 ? 0.7 : (i % 3 === 1 ? -0.4 : 0.1));
+            log.push({ id: 'b' + i, date: shiftDateKey(t, -i), weightKg: Math.round(w * 10) / 10, bodyFatPct: null });
+        }
+        localStorage.setItem('bodyMetricsLogV2', JSON.stringify(log));
+        localStorage.setItem('userGoalWeightV2', '85.0');
     });
     for (const tab of ['overview', 'steps', 'nutrition', 'running', 'weight', 'stats', 'motivation', 'gym-strength', 'plan', 'profile']) {
         await page.evaluate(t => { initApp(); switchTab(t); }, tab);
