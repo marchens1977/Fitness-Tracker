@@ -1885,7 +1885,6 @@
             <button type="button" onclick="saveReminders()">Erinnerungen speichern</button>
             <p id="remStatus" style="font-size: 0.85rem; margin-bottom: 0;"></p>
             <button type="button" class="btn-secondary" id="remSettingsBtn" style="display: none;" onclick="window.AndroidApp.openNotificationSettings()">Benachrichtigungen in Android erlauben</button>
-            <button type="button" class="btn-secondary" id="remTestBtn" style="display: none; margin-top: 8px;" onclick="sendTestReminder()">Test-Benachrichtigung senden</button>
         </div>
     </section>
 
@@ -8374,13 +8373,6 @@
         showToast(Object.values(r).some(x => x.on) ? 'Erinnerungen gespeichert.' : 'Erinnerungen ausgeschaltet.');
     }
 
-    function sendTestReminder() {
-        let res = 'off';
-        try { res = window.AndroidApp.sendTestReminder(); } catch (e) {}
-        showToast(res === 'ok' ? 'Test gesendet – schau oben in die Benachrichtigungen.' : 'Benachrichtigungen sind aus – bitte erlauben.');
-        renderReminderCard(res === 'ok' ? 'ok' : 'off');
-    }
-
     function nowHHMM() {
         const d = new Date();
         return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -8442,8 +8434,6 @@
                 : `✓ Aktiv: ${active.map(d => `${d.label.split(' ').slice(1).join(' ')} ${set[d.id].time}`).join(' · ')}`);
         st.style.color = blocked ? '#ffb48f' : (anyOn ? '#3ddc84' : '');
         document.getElementById('remSettingsBtn').style.display = blocked ? '' : 'none';
-        const canTest = typeof window.AndroidApp.sendTestReminder === 'function';
-        document.getElementById('remTestBtn').style.display = canTest ? '' : 'none';
         let exact = true;
         try { if (typeof window.AndroidApp.canExactReminders === 'function') exact = !!window.AndroidApp.canExactReminders(); } catch (e) {}
         document.getElementById('remExactHint').style.display = anyOn && !exact ? '' : 'none';

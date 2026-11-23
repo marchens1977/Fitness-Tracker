@@ -76,7 +76,7 @@ pruefe("setExactAndAllowWhileIdle" in reminder and "setWindow" in reminder and "
        "Genauer Wecker, ohne Erlaubnis Zeitfenster (max. 10 Min.) statt bis zu 1 Std. Verspätung")
 pruefe("setAndAllowWhileIdle" not in reminder, "Kein ungefährer Wecker mehr für Erinnerungen (konnte bis zu 1 Std. später kommen)")
 pruefe("handledToday" in reminder and "markHandled" in reminder, "Verschobene Erinnerung wird nachgeholt, aber nie doppelt gezeigt")
-pruefe("public String sendTestReminder()" in main and "sendTestReminder" in html, "Test-Knopf: App zeigt sofort eine Benachrichtigung")
+pruefe("public String sendTestReminder()" in main, "App kann bei Bedarf eine Test-Benachrichtigung zeigen (Knopf in der Webseite entfernt)")
 pruefe("ReminderReceiver.scheduleAll" in (PKG / "StepAlarmReceiver.java").read_text(encoding="utf-8"),
        "Nach Handy-Neustart werden Erinnerungen neu eingeplant")
 pruefe("public String setReminders(String json)" in main and "openNotificationSettings" in main,

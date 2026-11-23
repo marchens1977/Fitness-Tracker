@@ -194,9 +194,7 @@ function pruefe(ok, was) {
     pruefe(p2.version === 2 && ev.on && ev.time === '21:15' && ev.title.includes('Tageswerte'), 'App bekommt „Tageswerte eintragen“ 21:15');
     pruefe((await app2.locator('#remStatus').innerText()).includes('Tageswerte eintragen 21:15'), 'Status zeigt aktive Erinnerungen');
     pruefe((await app2.locator('#rem_evening_status').innerText()).startsWith('Heute:'), 'Jede aktive Erinnerung zeigt „Heute: …“');
-    pruefe(await app2.locator('#remTestBtn').isVisible(), 'Knopf „Test-Benachrichtigung senden“ sichtbar');
-    await app2.click('#remTestBtn');
-    pruefe(await app2.evaluate(() => window.__tested) === 1 && (await app2.locator('#toast').innerText()).includes('Test gesendet'), 'Test-Knopf ruft die App, Meldung „Test gesendet“');
+    pruefe(await app2.locator('#remTestBtn').count() === 0, 'Kein Knopf „Test-Benachrichtigung“ mehr (Wunsch des Nutzers 24.11.)');
     pruefe(await app2.locator('#remExactHint').isVisible(), 'Ohne pünktliche Wecker: Hinweis „bis zu 10 Minuten später“');
     await app2.evaluate(() => switchTab('nutrition'));
     await app2.fill('#nutKcalInput', '600');

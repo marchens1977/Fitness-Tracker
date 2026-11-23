@@ -139,7 +139,9 @@ Wichtige Details in `index.html`:
     Zeilen sind dort gesperrt mit Update-Hinweis. Abgleich mit der App nach jeder Änderung
     (`scheduleReminderSync`, gebündelt nach 0,5 s). Antippen öffnet die passende Seite.
     Unter jeder eingeschalteten Erinnerung steht „Heute: kommt um … / heute nicht nötig (Grund) /
-    Uhrzeit vorbei“ (`MotivCalc.reminderTodayStatus`). Knopf „Test-Benachrichtigung senden“.
+    Uhrzeit vorbei“ (`MotivCalc.reminderTodayStatus`). Der Knopf „Test-Benachrichtigung senden“
+    wurde nach erfolgreichem Test wieder entfernt (Wunsch des Nutzers 24.11.2026); die App kann es
+    weiterhin (`AndroidApp.sendTestReminder()`), falls er zur Fehlersuche mal wieder gebraucht wird.
 - **Backup (Teil 4, seit 23.11.2026):** `BACKUP_SCHEMA` listet alle Speicher; `exportBackup()`
   schreibt jeden davon (Sicherheitsnetz: auch künftig neue Schema-Einträge) plus `backupFormat`
   (`fitness-tracker-backup/3`) und `exportedAt`. **Bewusst nicht im Backup:** `aiApiKeyV2`
@@ -184,8 +186,9 @@ Wichtige Details in `index.html`:
   Zeitfenster `setWindow` von max. 10 Min. (früher `setAndAllowWhileIdle` – Android 12+ durfte das
   bis zu 1 Std. verschieben, Fehler vom 24.11.2026). **Nachholen:** War die Uhrzeit vor höchstens
   30 Min. und die Erinnerung heute noch nicht ausgelöst, kommt sie in 1 Minute (Merk-Wert
-  `handled_<id>` = „Datum@Uhrzeit“, verhindert doppelte Erinnerungen). Test-Knopf
-  `AndroidApp.sendTestReminder()`, `AndroidApp.canExactReminders()`. Nach Neustart neu eingeplant
+  `handled_<id>` = „Datum@Uhrzeit“, verhindert doppelte Erinnerungen).
+  `AndroidApp.sendTestReminder()` (zeigt sofort eine Benachrichtigung; Knopf in der Webseite
+  entfernt), `AndroidApp.canExactReminders()`. Nach Neustart neu eingeplant
   (`StepAlarmReceiver`). Erlaubnis
   `POST_NOTIFICATIONS` wird ab Android 13 beim Einschalten erfragt; ist sie aus, zeigt die Webseite
   einen Knopf zu den Android-Einstellungen (`AndroidApp.openNotificationSettings()`).
@@ -221,8 +224,8 @@ Wichtige Details in `index.html`:
   `REQUEST_INSTALL_PACKAGES`; kein Schlüssel im Code; startet den Java-Test
   `test/UpdateVersionTest.java` (z. B. „app-v1.0.10“ → 10, „10 ist neuer als 9“); fragt zum Schluss
   echt bei GitHub das neueste Release ab (ohne Internet nur Hinweis). Prüft außerdem die
-  Erinnerungen (Erlaubnis im Manifest, Empfänger angemeldet, keine exakten Wecker, Neustart,
-  Anbindung an die Webseite) und startet `test/ReminderPlanTest.java`.
+  Erinnerungen (Erlaubnis im Manifest, Empfänger angemeldet, pünktliche Wecker mit Zeitfenster als
+  Ersatz, Nachholen, Neustart, Anbindung an die Webseite) und startet `test/ReminderPlanTest.java`.
 - `node test/gewicht_test.js` – prüft die Gewichts-Berechnungen ohne Browser: ein Wert pro Tag,
   7-Tage-Ø mit Lücken, Kalenderwochen Mo–So (auch Jahreswechsel), Veränderung zur Vorwoche (keine
   falschen Vergleiche über fehlende Wochen), Hinweise (Schwankung, ideales Tempo, zu schnell),
@@ -371,8 +374,20 @@ Wichtige Details in `index.html`:
   der App auf morgen verschoben. Behoben: pünktliche Wecker, Nachholen, Test-Knopf, Anzeige
   „Heute: …“ je Erinnerung (neue App-Version nötig).
 
+- 24.11.2026 – Nutzer: App 1.0.17 installiert, Test-Benachrichtigung kam an und sieht gut aus.
+  Test-Knopf danach wieder entfernt (nur Webseite, kein App-Update nötig). Sitzung abgeschlossen.
+
+### Stand zum Weitermachen (24.11.2026)
+- App-Version auf dem Handy: **1.0.17** (Erinnerungen pünktlich). Webseite aktuell auf `main`.
+- Teil 1–4 des Auftrags vom 23.11. sind fertig, dazu Gewicht mit Trend und Erinnerungen v2.
+- **Noch offen, nur am Handy prüfbar:** kommen die geplanten Erinnerungen im Alltag pünktlich
+  (z. B. „Abends Tageswerte“, „Serie retten“)? Hintergrund-Zählen der Schritte über Mitternacht.
+  Die Test-Listen unten sind dafür der Leitfaden.
+- Bei Problemen: der Nutzer meldet Erinnerung, Uhrzeit und den Text „Heute: …“ unter der
+  Erinnerung im Profil – daran sieht man, ob sie absichtlich ausblieb.
+
 ### Test-Liste Erinnerungen v2 + Serie (zum Abhaken am Handy)
-- [ ] Nach dem Update: Profil → Erinnerungen → „Test-Benachrichtigung senden“ → Benachrichtigung kommt sofort.
+- [x] Nach dem Update: Test-Benachrichtigung kam sofort (24.11., Knopf danach entfernt).
 - [ ] Unter jeder eingeschalteten Erinnerung steht „Heute: …“ (z. B. „heute nicht nötig (heute schon gewogen)“).
 - [ ] „Abends Tageswerte“ auf eine Uhrzeit in 3–5 Minuten stellen, speichern, App schließen → kommt pünktlich.
 - [ ] Serie/Wochenansicht zeigt nur Tage mit echtem Training (nicht mehr „7 von 7“).
