@@ -95,8 +95,12 @@ Wichtige Details in `index.html`:
   - Rechen-/Anfrage-Teil im Block `PLAN-CALC-START … PLAN-CALC-END` (`PlanCalc`): Systemanweisung
     (langsamer Wiedereinstieg, Geräte/Zeit/Einschränkungen beachten, nur Gewicht – keine Maße,
     kein Körperfett, Wochen-Ø statt Tageswert), Anfrage-Inhalt (Profil, Gewicht über
-    `getWeightCheckinData()`, Ernährungsziele, Aktivität 14 Tage, letzter Plan mit erledigten
-    Einheiten/Schwierigkeit/Wiederholungen, Check-in, Schwerpunkte, Tage), Datenstrom lesen,
+    `getWeightCheckinData()`, Ernährungsziele, **Logbuch 14 Tage** (`PlanCalc.activityDigest`, seit
+    24.11.2026: Kraft mit Übung + „60 kg × 8“ je Satz, Bodyweight-Sätze, Cardio mit Gerät/Min./km,
+    Läufe mit Pace, Dehnen, Mini-Einheiten, Schritte-Ø), **Bestwerte** (`getRecordsDigest`), letzter
+    Plan mit erledigten Einheiten/Schwierigkeit/Wiederholungen/Notiz, Check-in, Schwerpunkte, Tage).
+    Die Systemanweisung sagt der KI, das Logbuch auszuwerten (auf echten Gewichten/Wiederholungen
+    aufbauen, frei eingetragenes Training in die Wochenbelastung einrechnen). Datenstrom lesen,
     Plan prüfen (`normalizePlan`: jeder Tag genau einmal, fehlende Tage = Ruhetag).
   - Ablauf: Profil (einmal) → Schwerpunkte (Mehrfachauswahl + Wünsche) + 1/2 Wochen + Start
     (heute/morgen/nächster Montag) → Plan. Einheiten abhaken mit Schwierigkeit (zu leicht /
@@ -232,11 +236,11 @@ Wichtige Details in `index.html`:
   „verloren“, Etappenziele, Daten für den KI-Check-in.
 - `node test/plan_test.js` – prüft den KI-Plan-Teil ohne Browser/Internet: Zeitraum, Kosten,
   Anfrage (Modell, JSON-Format, kein Schlüssel im Inhalt, Gewicht als Ø/Trend, Schwerpunkte,
-  Check-in, letzter Plan), JSON-Schema nach API-Regeln, Datenstrom lesen (Stücke, Fehler,
+  Check-in, letzter Plan, Logbuch 14 Tage mit Gewichten/Sätzen, Bestwerte), JSON-Schema nach API-Regeln, Datenstrom lesen (Stücke, Fehler,
   Modellwechsel), Plan prüfen, Fortschritt.
 - `node test/plan_web_test.js` – spielt den ganzen Plan-Ablauf im Browser durch, die Claude-API
   wird **nachgespielt** (kein Guthaben, kein echter Schlüssel): Profil, Schlüssel, Fehlermeldungen
-  (falscher Schlüssel, kein Guthaben), Plan erstellen, Kopfzeilen, Abhaken, Check-in, nächster
+  (falscher Schlüssel, kein Guthaben), Plan erstellen, Kopfzeilen, Logbuch + Bestwerte in der Anfrage, Abhaken, Check-in, nächster
   Plan, Verlauf, Backup ohne Schlüssel, Schlüssel löschen.
 - `node test/motivation_test.js` – prüft die Motivations-Berechnungen ohne Browser: Ruhetage (Plan,
   feste Wochentage, Plan geht vor), Serie mit Ruhetagen, „ohne Süßes“-Serie (auch Jahreswechsel),
@@ -377,6 +381,11 @@ Wichtige Details in `index.html`:
 - 24.11.2026 – Nutzer: App 1.0.17 installiert, Test-Benachrichtigung kam an und sieht gut aus.
   Test-Knopf danach wieder entfernt (nur Webseite, kein App-Update nötig). Sitzung abgeschlossen.
 
+- 24.11.2026 – Nutzer fragte, ob die KI das Logbuch auswertet. Bisher nur teilweise (Plan-Einheiten
+  ja, frei eingetragenes Training nur als Anzahl Tage). Jetzt bekommt die KI das ganze Logbuch der
+  letzten 14 Tage (Übungen, Gewichte, Sätze, Cardio, Läufe, Dehnen, Mini-Einheiten) und die Bestwerte.
+  Nur Webseite, kein App-Update. Ein Plan wird dadurch etwas teurer (wenige Cent).
+
 ### Stand zum Weitermachen (24.11.2026)
 - App-Version auf dem Handy: **1.0.17** (Erinnerungen pünktlich). Webseite aktuell auf `main`.
 - Teil 1–4 des Auftrags vom 23.11. sind fertig, dazu Gewicht mit Trend und Erinnerungen v2.
@@ -429,6 +438,8 @@ Wichtige Details in `index.html`:
 - [ ] Alter Plan steht im „Verlauf“ (aufklappbar, mit Check-in).
 - [ ] Backup speichern → Datei enthält **keinen** Schlüssel (beginnt mit sk-ant-).
 - [ ] Falls eine Fehlermeldung kommt: Text notieren und Claude zeigen.
+- [ ] Nach einer Woche mit eigenem Krafttraining (Training → Kraft): Im nächsten Plan passen die
+      Startgewichte/Wiederholungen zu dem, was du wirklich geschafft hast (KI-Rückblick erwähnt es).
 
 ### Test-Liste Gewicht (zum Abhaken am Handy)
 - [ ] Startseite: Gewicht eintragen (z. B. 92,4) → „Heute: 92,4 kg“ klein, groß „Ø …“.

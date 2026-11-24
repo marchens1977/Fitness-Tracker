@@ -139,5 +139,36 @@ pruefe(st.total === 3 && st.done === 2 && st.pct === 67, '2 von 3 Trainingstagen
 pruefe(st.avgDifficulty === 3, 'Durchschnittliche Schwierigkeit');
 pruefe(!P.isEnded(rec, d1[6]) && P.isEnded(rec, P.shift(d1[6], 1)), 'Zeitraum endet nach dem letzten Tag');
 
+console.log('Logbuch für die KI (letzte 14 Tage):');
+const T = '2026-11-24';
+const log = P.activityDigest({
+    strength: {
+        '2026-11-20': { date: '2026-11-20', exercises: [{ name: 'Bankdrücken', sets: [{ weight: 60, reps: 8 }, { weight: 62.5, reps: 6 }] }] },
+        '2026-11-01': { date: '2026-11-01', exercises: [{ name: 'Kniebeugen', sets: [{ weight: 80, reps: 5 }] }] }
+    },
+    bw: { '2026-11-22': { exercises: [{ name: 'Klimmzüge', unit: 'Wdh.', sets: [{ reps: 6 }, { reps: 5 }] }, { name: 'Leer', sets: [] }] } },
+    stretch: { '2026-11-23': { exercises: [{ name: 'Hüftbeuger', unit: 'Sek.', sets: [{ reps: 30 }] }] } },
+    cardio: { '2026-11-21': { entries: [{ deviceName: 'Laufband', duration: 20, distance: 2.5 }, { deviceName: 'Rudergerät', duration: 10, distance: 0 }] } },
+    runs: [{ date: '2026-11-19', distanceKm: 5, durationMin: 30 }, { date: '2026-10-01', distanceKm: 10, durationMin: 60 }],
+    mini: ['2026-11-18', '2026-11-02'],
+    steps: { '2026-11-24': 4000, '2026-11-23': 8000 }
+}, T);
+pruefe(log.zeitraum === '2026-11-11 bis 2026-11-24', 'Zeitraum 14 Tage bis heute');
+pruefe(log.krafttraining.length === 1 && log.krafttraining[0].uebungen[0].saetze.join('|') === '60 kg × 8|62,5 kg × 6', 'Kraft: Übung mit Gewicht × Wiederholungen je Satz (alter Eintrag fällt weg)');
+pruefe(log.krafttraining[0].datum === '2026-11-20 (Fr)', 'Kraft: Datum mit Wochentag');
+pruefe(log.bodyweight[0].uebungen.length === 1 && log.bodyweight[0].uebungen[0].saetze.join('|') === '6 Wdh.|5 Wdh.', 'Bodyweight: Sätze, leere Übung weggelassen');
+pruefe(log.dehnen[0].uebungen[0].saetze[0] === '30 Sek.', 'Dehnen: Haltezeit in Sekunden');
+pruefe(log.cardio[0].einheiten.join('|') === 'Laufband: 20 Min., 2,5 km|Rudergerät: 10 Min.', 'Cardio: Gerät, Minuten, km');
+pruefe(log.laeufe.length === 1 && log.laeufe[0].pace === '6:00 min/km' && log.laeufe[0].minuten === 30, 'Läufe: nur 14 Tage, mit Pace');
+pruefe(log.miniEinheiten10Min.join() === '2026-11-18', 'Mini-Einheiten im Zeitraum');
+pruefe(log.schritteSchnitt7Tage === 6000, 'Schritte-Ø 7 Tage');
+pruefe(log.tageMitKraft === 1 && log.tageMitBodyweight === 1 && log.tageMitCardio === 1 && log.tageMitLauf === 1 && log.tageMitDehnen === 1, 'Anzahl Tage je Art');
+const leer = P.activityDigest({}, T);
+pruefe(leer.krafttraining.length === 0 && leer.schritteSchnitt7Tage === null, 'Leeres Logbuch stürzt nicht ab');
+const withLog = JSON.parse(P.buildUserContent({ profile, weight, weeks: 1, dates: d1, focus: { options: [] }, activity: log, records: { 'Klimmzüge (am Stück)': '6 Wdh. (am 2026-11-22)' } }).split('\n\n').slice(1).join('\n\n'));
+pruefe(withLog.aktivitaetLetzte14Tage.krafttraining[0].uebungen[0].name === 'Bankdrücken', 'Logbuch steckt in der Anfrage');
+pruefe(withLog.bestwerte['Klimmzüge (am Stück)'] === '6 Wdh. (am 2026-11-22)', 'Bestwerte stecken in der Anfrage');
+pruefe(/Logbuch/.test(P.SYSTEM_PROMPT) && /tatsächlich geschafften Gewichten/.test(P.SYSTEM_PROMPT), 'Systemanweisung: Logbuch auswerten');
+
 console.log(fehler ? `plan_test: ${fehler} FEHLER` : 'plan_test: alles OK');
 process.exit(fehler ? 1 : 0);

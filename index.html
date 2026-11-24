@@ -7128,6 +7128,7 @@
             '',
             'Grundsätze:',
             '- Die Person steigt wieder ein. Beim ersten Plan bewusst langsam und mit wenig Umfang beginnen; danach nur in kleinen Schritten steigern, passend zu ihren Rückmeldungen (was zu leicht oder zu schwer war, geschaffte Wiederholungen).',
+            '- Werte das Logbuch aus (aktivitaetLetzte14Tage: Übungen mit Gewichten und Sätzen, Bodyweight, Cardio, Läufe, Dehnen, Mini-Einheiten) und die Bestwerte: Baue auf den tatsächlich geschafften Gewichten und Wiederholungen auf (z. B. Startgewichte daran ausrichten), rechne selbst eingetragenes Training in die Belastung der Woche mit ein und plane nicht an den tatsächlichen Leistungen vorbei. Steigere nur, wenn die Werte das hergeben.',
             '- Halte dich genau an verfügbare Geräte, Trainingstage pro Woche und Zeit pro Einheit. Nimm die genannten Einschränkungen ernst und wähle im Zweifel die schonendere Übung.',
             '- Berücksichtige die gewählten Schwerpunkte und Wünsche für diesen Zeitraum.',
             '- Als Körperwert gibt es nur das Gewicht. Erwähne oder empfiehl keine Körpermaße, kein Körperfett und keine Fotos. Beim Gewicht zählt der Wochendurchschnitt und der Trend, nicht ein einzelner Tageswert.',
@@ -7175,6 +7176,56 @@
             };
         }
 
+        // Logbuch der letzten 14 Tage für die KI: was wirklich trainiert wurde (Übungen, Gewichte, Sätze)
+        function activityDigest(src, todayKey) {
+            src = src || {};
+            const from = shift(todayKey, -13);
+            const inRange = d => d >= from && d <= todayKey;
+            const num = v => String(Math.round(Number(v) * 100) / 100).replace('.', ',');
+            const days = obj => Object.keys(obj || {}).filter(inRange).sort();
+            const exList = (obj, fmtSets) => days(obj).map(d => ({
+                datum: `${d} (${weekday(d)})`,
+                uebungen: ((obj[d] && obj[d].exercises) || []).filter(e => e && (e.sets || []).length).map(e => ({
+                    name: e.name, saetze: fmtSets(e)
+                }))
+            })).filter(x => x.uebungen.length);
+            const unitOf = e => (e.unit === 'Sek.' ? 'Sek.' : 'Wdh.');
+            let stepsSum = 0, stepsDays = 0;
+            for (let i = 0; i < 7; i++) {
+                const v = Number((src.steps || {})[shift(todayKey, -i)]) || 0;
+                if (v > 0) { stepsSum += v; stepsDays++; }
+            }
+            const pace = (km, min) => {
+                if (!(km > 0) || !(min > 0)) return null;
+                const sec = Math.round((min / km) * 60);
+                return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')} min/km`;
+            };
+            const strength = exList(src.strength, e => e.sets.map(s => `${num(s.weight)} kg × ${s.reps}`));
+            const bw = exList(src.bw, e => e.sets.map(s => `${s.reps} ${unitOf(e)}`));
+            const stretch = exList(src.stretch, e => e.sets.map(s => `${s.reps} ${unitOf(e)}`));
+            const cardio = days(src.cardio).map(d => ({
+                datum: `${d} (${weekday(d)})`,
+                einheiten: ((src.cardio[d] && src.cardio[d].entries) || []).map(c =>
+                    `${c.deviceName}: ${c.duration} Min.${c.distance > 0 ? `, ${num(c.distance)} km` : ''}`)
+            })).filter(x => x.einheiten.length);
+            const runs = (src.runs || []).filter(r => r && r.date && inRange(r.date)).sort((a, b) => a.date.localeCompare(b.date))
+                .map(r => ({ datum: `${r.date} (${weekday(r.date)})`, km: Math.round(r.distanceKm * 100) / 100,
+                    minuten: r.durationMin ? Math.round(r.durationMin * 10) / 10 : null, pace: pace(r.distanceKm, r.durationMin) }));
+            return {
+                zeitraum: `${from} bis ${todayKey}`,
+                hinweis: 'Selbst eingetragenes Training außerhalb des KI-Plans (Plan-Einheiten stehen bei vorherigerPlan).',
+                schritteSchnitt7Tage: stepsDays ? Math.round(stepsSum / stepsDays) : null,
+                krafttraining: strength,
+                bodyweight: bw,
+                cardio,
+                laeufe: runs,
+                dehnen: stretch,
+                miniEinheiten10Min: (src.mini || []).filter(inRange).sort(),
+                tageMitKraft: strength.length, tageMitBodyweight: bw.length, tageMitCardio: cardio.length,
+                tageMitLauf: new Set(runs.map(r => r.datum)).size, tageMitDehnen: stretch.length
+            };
+        }
+
         function buildUserContent(ctx) {
             const p = ctx.profile || {};
             const data = {
@@ -7200,6 +7251,7 @@
                 } : { hinweis: 'Noch keine Gewichtswerte', zielgewichtKg: p.goalWeightKg || null },
                 ernaehrungsziele: ctx.nutritionGoals || null,
                 aktivitaetLetzte14Tage: ctx.activity || null,
+                bestwerte: ctx.records && Object.keys(ctx.records).length ? ctx.records : null,
                 ersterPlan: !ctx.previousPlan,
                 vorherigerPlan: previousPlanDigest(ctx.previousPlan),
                 checkIn: ctx.checkin ? {
@@ -7340,7 +7392,7 @@
 
         return {
             MODEL, PRICE_PER_MTOK, DIFFICULTY, FOCUS_OPTIONS, PLAN_SCHEMA, SYSTEM_PROMPT,
-            shift, weekday, periodDates, nextMonday, costUsd, focusLabels, previousPlanDigest,
+            shift, weekday, periodDates, nextMonday, costUsd, focusLabels, previousPlanDigest, activityDigest,
             buildUserContent, buildRequestBody, createStreamParser, normalizePlan, progressStats, isEnded
         };
     })();
@@ -7578,22 +7630,23 @@
 
     /* --- Daten für die KI --- */
     function getActivityDigest() {
-        const today = getLocalDateKey();
-        let stepsSum = 0;
-        let stepsDays = 0;
-        for (let i = 0; i < 7; i++) {
-            const v = getStepsForDate(shiftDateKey(today, -i));
-            if (v > 0) { stepsSum += v; stepsDays++; }
-        }
-        const from = shiftDateKey(today, -13);
-        const inRange = obj => Object.keys(obj).filter(d => d >= from && d <= today).length;
-        return {
-            schritteSchnitt7Tage: stepsDays ? Math.round(stepsSum / stepsDays) : null,
-            laeufe: getRuns().filter(r => r.date >= from).map(r => ({ datum: r.date, km: r.distanceKm, pace: formatPace(r.distanceKm, r.durationMin) })),
-            krafttrainingTage: inRange(getGymStrengthWorkouts()),
-            cardioTage: inRange(getGymCardioWorkouts()),
-            bodyweightTage: inRange(getBwWorkouts())
-        };
+        return PlanCalc.activityDigest({
+            strength: getGymStrengthWorkouts(), cardio: getGymCardioWorkouts(), bw: getBwWorkouts(),
+            stretch: getStretchWorkouts(), runs: getRuns(), mini: readDateList('miniSessionsV2'), steps: getStepsHistory()
+        }, getLocalDateKey());
+    }
+
+    // Bestwerte für die KI (nur vorhandene), z. B. { "Klimmzüge (am Stück)": "8 Wdh. (am 2026-11-20)" }
+    function getRecordsDigest() {
+        const out = {};
+        try {
+            const recs = MotivCalc.records(getRecordSources(), getLocalDateKey());
+            MotivCalc.RECORDS.forEach(def => {
+                const r = recs[def.key];
+                if (r && r.best) out[def.label] = `${fmtRecord(def, r.best.value)} (am ${r.best.date})`;
+            });
+        } catch (e) { /* Bestwerte sind nur Zusatz */ }
+        return out;
     }
 
     function getNutritionGoalsDigest() {
@@ -7691,7 +7744,7 @@
         const body = PlanCalc.buildRequestBody({
             profile, weight: getWeightCheckinData(), weeks: planWeeks, dates, focus,
             previousPlan: prev, checkin: prev ? prev.checkin : null,
-            nutritionGoals: getNutritionGoalsDigest(), activity: getActivityDigest()
+            nutritionGoals: getNutritionGoalsDigest(), activity: getActivityDigest(), records: getRecordsDigest()
         });
 
         const btn = document.getElementById('planCreateBtn');

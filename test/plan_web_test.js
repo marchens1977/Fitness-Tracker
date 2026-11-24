@@ -108,6 +108,11 @@ function sse(obj) {
 
     console.log('Ersten Plan erstellen:');
     mode = 'ok';
+    await page.evaluate(() => {
+        const d = shiftDateKey(getLocalDateKey(), -1);
+        localStorage.setItem('gymStrengthWorkoutsV2', JSON.stringify({ [d]: { date: d, exercises: [{ exerciseId: 'x', name: 'Bankdrücken', sets: [{ id: 1, weight: 60, reps: 8 }] }] } }));
+        localStorage.setItem('bwWorkoutsV2', JSON.stringify({ [d]: { date: d, exercises: [{ exerciseId: 'bw_pullup', name: 'Klimmzüge', unit: 'Wdh.', sets: [{ id: 2, reps: 7 }] }] } }));
+    });
     requests.length = 0;
     await page.click('#planFocusChips .chip[data-focus="gym"]');
     await page.click('#planFocusChips .chip[data-focus="strength"]');
@@ -123,6 +128,8 @@ function sse(obj) {
     pruefe(c1.includes('Mehr Kraft') && c1.includes('wenig Zeit') && c1.includes('"ersterPlan": true'), 'Schwerpunkte, Wünsche, „erster Plan“ übermittelt');
     pruefe(c1.includes('"durchschnitt7TageKg": 93.4') && c1.includes('Knie links'), 'Gewicht (Ø) und Einschränkungen übermittelt');
     pruefe(!c1.includes(FAKE_KEY), 'Schlüssel steht nicht im Text der Anfrage');
+    pruefe(c1.includes('Bankdrücken') && c1.includes('60 kg × 8') && c1.includes('7 Wdh.'), 'Logbuch (Übungen, Gewichte, Wiederholungen) übermittelt');
+    pruefe(c1.includes('"bestwerte"') && c1.includes('Klimmzüge (am Stück)'), 'Bestwerte übermittelt');
     const rec = await page.evaluate(() => getActivePlan());
     pruefe(rec.dates.length === 7 && rec.plan.days.length === 7 && rec.focus.options.includes('gym'), 'Plan gespeichert: 7 Tage, Schwerpunkte beim Plan');
     pruefe(Math.abs(rec.costUsd - 0.212) < 1e-6, 'Kosten berechnet (3.000 + 10.000 Tokens = 0,21 $)');
