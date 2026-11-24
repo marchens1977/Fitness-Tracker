@@ -170,5 +170,39 @@ pruefe(withLog.aktivitaetLetzte14Tage.krafttraining[0].uebungen[0].name === 'Ban
 pruefe(withLog.bestwerte['Klimmzüge (am Stück)'] === '6 Wdh. (am 2026-11-22)', 'Bestwerte stecken in der Anfrage');
 pruefe(/Logbuch/.test(P.SYSTEM_PROMPT) && /tatsächlich geschafften Gewichten/.test(P.SYSTEM_PROMPT), 'Systemanweisung: Logbuch auswerten');
 
+// --- Trainingstag verschieben ---
+console.log('Verschieben:');
+const mvDates = ['2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27'];
+const tr = d => ({ date: d, type: 'training', title: 'T ' + d, durationMin: 30, warmup: '', exercises: [{ name: 'Kniebeugen', sets: 3, reps: '10', restSec: 60, explanation: '', tracksReps: true }], cooldown: '', notes: '' });
+const rs = d => ({ date: d, type: 'ruhe', title: 'Ruhetag', durationMin: 0, warmup: '', exercises: [], cooldown: '', notes: 'Spaziergang' });
+const mvRec = { dates: mvDates.slice(), plan: { days: [tr(mvDates[0]), rs(mvDates[1]), tr(mvDates[2]), rs(mvDates[3])] }, progress: {}, checkin: null };
+pruefe(P.canMove(mvRec, '2026-11-24') && !P.canMove(mvRec, '2026-11-25'), 'Nur Trainingstage sind verschiebbar');
+pruefe(P.moveTargets(mvRec, '2026-11-24', '2026-11-24').join() === '2026-11-25,2026-11-27', 'Ziele = freie Ruhetage ab heute');
+pruefe(P.moveTargets(mvRec, '2026-11-24', '2026-11-26').join() === '2026-11-27', 'Vergangene Ruhetage sind kein Ziel');
+const sw = P.moveDay(mvRec, '2026-11-24', '2026-11-25', '2026-11-24');
+pruefe(sw.plan.days[0].type === 'ruhe' && sw.plan.days[0].movedTo === '2026-11-25' && sw.plan.days[0].date === '2026-11-24', 'Tausch: alter Tag wird Ruhetag (mit Hinweis)');
+pruefe(sw.plan.days[1].type === 'training' && sw.plan.days[1].title === 'T 2026-11-24' && sw.plan.days[1].movedFrom === '2026-11-24', 'Tausch: Einheit liegt am neuen Tag');
+pruefe(sw.dates.join() === mvDates.join() && sw.plan.days.length === 4, 'Tausch: Plan endet am selben Tag');
+pruefe(mvRec.plan.days[0].type === 'training', 'Original bleibt unverändert');
+const back = P.moveDay(sw, '2026-11-25', '2026-11-24', '2026-11-24');
+pruefe(back.plan.days[0].type === 'training' && !back.plan.days[0].movedFrom, 'Zurückschieben: Hinweis „verschoben“ verschwindet');
+let err = false; try { P.moveDay(mvRec, '2026-11-24', '2026-11-26', '2026-11-24'); } catch (e) { err = true; }
+pruefe(err, 'Auf einen anderen Trainingstag geht nicht');
+const doneRec = JSON.parse(JSON.stringify(mvRec)); doneRec.progress['2026-11-24'] = { done: true, difficulty: 2 };
+pruefe(!P.canMove(doneRec, '2026-11-24') && P.moveTargets(doneRec, '2026-11-24', '2026-11-24').length === 0, 'Erledigte Einheit nicht verschiebbar');
+const ciRec = Object.assign({}, mvRec, { checkin: { date: '2026-11-27' } });
+pruefe(!P.canMove(ciRec, '2026-11-24'), 'Nach dem Check-in nicht mehr verschiebbar');
+const sh = P.shiftLater(Object.assign({}, mvRec, { progress: { '2026-11-26': { done: true, difficulty: 2, doneOn: '2026-11-24' } } }), '2026-11-24');
+pruefe(sh.dates.join() === '2026-11-24,2026-11-25,2026-11-26,2026-11-27,2026-11-28', 'Nach hinten: Plan 1 Tag länger');
+pruefe(sh.plan.days.map(d => d.type[0]).join('') === 'rtrtr', 'Nach hinten: neuer Ruhetag, Rest rutscht 1 Tag');
+pruefe(sh.plan.days[0].movedTo === '2026-11-25' && sh.plan.days[1].title === 'T 2026-11-24' && sh.plan.days[1].movedFrom === '2026-11-24', 'Nach hinten: Hinweise stimmen');
+pruefe(sh.plan.days[4].date === '2026-11-28' && sh.plan.days[4].type === 'ruhe', 'Nach hinten: letzter Tag am neuen Ende');
+pruefe(sh.progress['2026-11-27'] && sh.progress['2026-11-27'].done && !sh.progress['2026-11-26'], 'Nach hinten: Erledigt-Haken wandert mit');
+pruefe(P.isEnded(sh, '2026-11-28') === false && P.isEnded(sh, '2026-11-29') === true, 'Check-in kommt 1 Tag später');
+const sh2 = P.shiftLater(sh, '2026-11-25');
+pruefe(sh2.plan.days[2].date === '2026-11-26' && sh2.plan.days[2].movedFrom === '2026-11-24', 'Zweimal verschoben: ursprünglicher Tag bleibt gemerkt');
+const dig = P.previousPlanDigest(Object.assign({ focus: { options: [] } }, sw));
+pruefe(dig.einheiten[0].verschobenVom === '2026-11-24', 'KI erfährt, dass eine Einheit verschoben wurde');
+
 console.log(fehler ? `plan_test: ${fehler} FEHLER` : 'plan_test: alles OK');
 process.exit(fehler ? 1 : 0);

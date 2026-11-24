@@ -7166,6 +7166,7 @@
                     return {
                         datum: d.date,
                         titel: d.title,
+                        verschobenVom: d.movedFrom || undefined,
                         geplant: d.exercises.map(ex => `${ex.name}: ${ex.sets} × ${ex.reps}`),
                         erledigt: !!p.done,
                         empfunden: p.done ? (DIFFICULTY[p.difficulty] || 'keine Angabe') : null,
@@ -7386,6 +7387,56 @@
             };
         }
 
+        // Trainingstag verschieben (Wunsch 24.11.2026): nur offene Trainingstage des aktiven Plans
+        function canMove(planRec, date) {
+            if (!planRec || !planRec.plan || planRec.checkin) return false;
+            const d = planRec.plan.days.find(x => x.date === date);
+            const p = (planRec.progress || {})[date];
+            return !!(d && d.type === 'training' && !(p && p.done));
+        }
+        // Freie Tage (Ruhetage ab heute) im selben Plan, auf die man eine Einheit legen kann
+        function moveTargets(planRec, fromDate, todayKey) {
+            if (!canMove(planRec, fromDate)) return [];
+            return planRec.plan.days.filter(d => d.type === 'ruhe' && d.date >= todayKey && d.date !== fromDate).map(d => d.date);
+        }
+        // Einheit mit einem freien Ruhetag tauschen – der Plan endet am selben Tag
+        function moveDay(planRec, fromDate, toDate, todayKey) {
+            if (!moveTargets(planRec, fromDate, todayKey).includes(toDate)) throw new Error('Verschieben nicht möglich');
+            const rec = JSON.parse(JSON.stringify(planRec));
+            const days = rec.plan.days;
+            const i = days.findIndex(d => d.date === fromDate);
+            const j = days.findIndex(d => d.date === toDate);
+            const train = Object.assign({}, days[i], { date: toDate, movedFrom: days[i].movedFrom || fromDate });
+            if (train.movedFrom === toDate) delete train.movedFrom;
+            const rest = Object.assign({}, days[j], { date: fromDate, title: 'Ruhetag (Training verschoben)', movedTo: toDate });
+            delete rest.movedFrom;
+            delete train.movedTo;
+            days[i] = rest;
+            days[j] = train;
+            return rec;
+        }
+        // Ab diesem Tag alles 1 Tag nach hinten – der Plan wird 1 Tag länger
+        function shiftLater(planRec, fromDate) {
+            if (!canMove(planRec, fromDate)) throw new Error('Verschieben nicht möglich');
+            const rec = JSON.parse(JSON.stringify(planRec));
+            const days = rec.plan.days;
+            const idx = days.findIndex(d => d.date === fromDate);
+            const tail = days.slice(idx).map(d => {
+                const n = Object.assign({}, d, { date: shift(d.date, 1) });
+                if (n.type === 'training') n.movedFrom = d.movedFrom || d.date;
+                if (n.movedFrom === n.date) delete n.movedFrom;
+                if (n.movedTo) delete n.movedTo;
+                return n;
+            });
+            const rest = { date: fromDate, type: 'ruhe', title: 'Ruhetag (Training verschoben)', durationMin: 0, warmup: '', exercises: [], cooldown: '', notes: '', movedTo: shift(fromDate, 1) };
+            rec.plan.days = days.slice(0, idx).concat([rest], tail);
+            const prog = {};
+            Object.keys(rec.progress || {}).forEach(k => { prog[k >= fromDate ? shift(k, 1) : k] = rec.progress[k]; });
+            rec.progress = prog;
+            rec.dates = rec.plan.days.map(d => d.date);
+            return rec;
+        }
+
         function isEnded(planRec, todayKey) {
             return !!(planRec && planRec.dates && todayKey > planRec.dates[planRec.dates.length - 1]);
         }
@@ -7393,7 +7444,8 @@
         return {
             MODEL, PRICE_PER_MTOK, DIFFICULTY, FOCUS_OPTIONS, PLAN_SCHEMA, SYSTEM_PROMPT,
             shift, weekday, periodDates, nextMonday, costUsd, focusLabels, previousPlanDigest, activityDigest,
-            buildUserContent, buildRequestBody, createStreamParser, normalizePlan, progressStats, isEnded
+            buildUserContent, buildRequestBody, createStreamParser, normalizePlan, progressStats, isEnded,
+            canMove, moveTargets, moveDay, shiftLater
         };
     })();
     /* PLAN-CALC-END */
@@ -7410,6 +7462,7 @@
     let planGenerating = false;
     let planOpenDay = null;
     let planCheckinOpen = false;
+    let planMoveOpen = '';
     let planProfileEditing = false;
     const planFocusSel = new Set();
 
@@ -7846,6 +7899,88 @@
         syncRemindersToApp();
     }
 
+    /* --- Verschieben --- */
+    function replaceActivePlan(updated) {
+        const list = getTrainingPlans();
+        list[list.length - 1] = updated;
+        saveTrainingPlans(list);
+    }
+    function afterPlanMove(newDate, msg) {
+        planMoveOpen = '';
+        planOpenDay = newDate;
+        renderPlanPage();
+        renderOverview();
+        syncRemindersToApp();
+        showToast(msg);
+        const t = document.getElementById(`pd_${newDate}`);
+        if (t && t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function movePlanDay(fromDate, toDate) {
+        const rec = getActivePlan();
+        let updated;
+        try { updated = PlanCalc.moveDay(rec, fromDate, toDate, getLocalDateKey()); } catch (e) { showToast('Verschieben geht hier nicht.'); return; }
+        replaceActivePlan(updated);
+        afterPlanMove(toDate, `Verschoben auf ${fmtDay(toDate)} 📅`);
+    }
+    function shiftPlanFrom(fromDate) {
+        const rec = getActivePlan();
+        if (!PlanCalc.canMove(rec, fromDate)) return;
+        const newEnd = PlanCalc.shift(rec.dates[rec.dates.length - 1], 1);
+        showModal({
+            icon: '⏩',
+            title: 'Alles 1 Tag nach hinten?',
+            text: `Ab ${fmtDay(fromDate)} rutschen alle Tage um 1 Tag nach hinten. ${fmtDay(fromDate)} wird Ruhetag. Der Plan endet dann am ${fmtDay(newEnd)}.`,
+            yes: 'Verschieben',
+            no: 'Abbrechen',
+            onYes: () => {
+                let updated;
+                try { updated = PlanCalc.shiftLater(getActivePlan(), fromDate); } catch (e) { showToast('Verschieben geht hier nicht.'); return; }
+                replaceActivePlan(updated);
+                afterPlanMove(PlanCalc.shift(fromDate, 1), `Ab ${fmtDay(fromDate)} alles 1 Tag später ⏩`);
+            }
+        });
+    }
+    function renderPlanMoveBox(rec, day) {
+        const box = el('div', 'plan-done-box');
+        box.id = `pdMove_${day.date}`;
+        if (planMoveOpen !== day.date) {
+            const b = el('button', 'btn-secondary', '📅 Geht heute nicht? Verschieben');
+            b.type = 'button';
+            b.onclick = () => { planMoveOpen = day.date; renderPlanPage(); };
+            box.appendChild(b);
+            return box;
+        }
+        box.appendChild(el('div', 'plan-sub', 'Auf einen freien Tag legen (Tausch mit Ruhetag)'));
+        const targets = PlanCalc.moveTargets(rec, day.date, getLocalDateKey());
+        if (targets.length) {
+            const chips = el('div', 'chip-row');
+            chips.style.flexWrap = 'wrap';
+            targets.forEach(t => {
+                const c = el('button', 'chip', fmtDay(t));
+                c.type = 'button';
+                c.dataset.moveTo = t;
+                c.onclick = () => movePlanDay(day.date, t);
+                chips.appendChild(c);
+            });
+            box.appendChild(chips);
+        } else {
+            box.appendChild(el('div', 'muted', 'In diesem Plan ist ab heute kein Ruhetag mehr frei.'));
+        }
+        box.appendChild(el('div', 'plan-sub', 'Oder: ab hier alles 1 Tag nach hinten'));
+        box.appendChild(el('div', 'muted', `Der Plan endet dann 1 Tag später (${fmtDay(PlanCalc.shift(rec.dates[rec.dates.length - 1], 1))}).`));
+        const s = el('button', '', '⏩ Ab hier 1 Tag nach hinten');
+        s.type = 'button';
+        s.dataset.shift = '1';
+        s.style.marginTop = '8px';
+        s.onclick = () => shiftPlanFrom(day.date);
+        const c = el('button', 'btn-secondary', 'Abbrechen');
+        c.type = 'button';
+        c.style.marginTop = '8px';
+        c.onclick = () => { planMoveOpen = ''; renderPlanPage(); };
+        box.append(s, c);
+        return box;
+    }
+
     function unmarkDateIfEmptyPlan(dateKey) { unmarkDateIfEmpty(dateKey); }
 
     // Hat der Tag eine erledigte Plan-Einheit? (zählt als aktiver Tag)
@@ -7913,7 +8048,7 @@
         head.type = 'button';
         head.append(
             el('span', 'pd-date', fmtDay(day.date)),
-            el('span', 'pd-title', day.type === 'ruhe' ? `😌 ${day.title}` : `${day.title}${day.durationMin ? ` · ${day.durationMin} Min.` : ''}`),
+            el('span', 'pd-title', day.type === 'ruhe' ? `😌 ${day.title}` : `${day.movedFrom ? '📅 ' : ''}${day.title}${day.durationMin ? ` · ${day.durationMin} Min.` : ''}`),
             el('span', 'pd-status' + (prog && prog.done ? ' done' : ''), prog && prog.done ? '✓' : (day.date === today ? '●' : ''))
         );
         const open = planOpenDay === day.date;
@@ -7922,6 +8057,8 @@
         if (!open) return wrap;
 
         const body = el('div', 'plan-day-body');
+        if (day.movedFrom) body.appendChild(el('p', 'muted', `📅 Verschoben vom ${fmtDay(day.movedFrom)}`));
+        if (day.movedTo) body.appendChild(el('p', 'muted', `📅 Training verschoben auf ${fmtDay(day.movedTo)}`));
         if (day.notes) body.appendChild(el('p', 'muted', day.notes));
         if (day.warmup) { body.appendChild(el('div', 'plan-sub', 'Aufwärmen')); body.appendChild(el('div', '', day.warmup)); }
         if (day.exercises.length) body.appendChild(el('div', 'plan-sub', 'Übungen'));
@@ -7979,6 +8116,7 @@
                 box.appendChild(b);
             }
             body.appendChild(box);
+            if (editable && !(prog && prog.done) && PlanCalc.canMove(rec, day.date)) body.appendChild(renderPlanMoveBox(rec, day));
         }
         wrap.appendChild(body);
         return wrap;

@@ -137,6 +137,32 @@ function sse(obj) {
     pruefe(await page.locator('#planCurrent .plan-day').count() === 7, 'Plan mit 7 Tagen angezeigt');
     pruefe(await page.locator('#planNewCard').isHidden(), 'Während ein Plan läuft: kein „Neuer Plan“');
 
+    console.log('Verschieben:');
+    {
+        const T = await page.evaluate(() => getLocalDateKey());
+        const d = n => page.evaluate(([t, k]) => shiftDateKey(t, k), [T, n]);
+        const T2 = await d(2), T3 = await d(3), T7 = await d(7);
+        await page.click(`#pd_${T2} .plan-day-head`);
+        await page.click(`#pdMove_${T2} button`);
+        pruefe(await page.locator(`#pdMove_${T2} .chip[data-move-to]`).count() === 3, 'Verschieben: freie Ruhetage als Auswahl');
+        await page.click(`#pdMove_${T2} .chip[data-move-to="${T3}"]`);
+        let r = await page.evaluate(() => getActivePlan());
+        pruefe(r.plan.days[2].type === 'ruhe' && r.plan.days[3].type === 'training' && r.dates.length === 7, 'Einheit auf freien Tag gelegt, Plan gleich lang');
+        pruefe((await page.locator(`#pd_${T3}`).innerText()).includes('Verschoben vom'), 'Neuer Tag zeigt „Verschoben vom …“');
+        await page.click(`#pdMove_${T3} button`);
+        await page.click(`#pdMove_${T3} button[data-shift]`);
+        pruefe(await page.locator('#appModal').isVisible() && (await page.locator('#appModalText').innerText()).includes('endet dann'), 'Rückfrage vor „alles nach hinten“');
+        await page.click('#appModalNo');
+        pruefe((await page.evaluate(() => getActivePlan())).dates.length === 7, 'Abbrechen ändert nichts');
+        await page.click(`#pdMove_${T3} button[data-shift]`);
+        await page.click('#appModalYes');
+        r = await page.evaluate(() => getActivePlan());
+        pruefe(r.dates.length === 8 && r.dates[7] === T7 && r.plan.days[3].type === 'ruhe' && r.plan.days[4].type === 'training', 'Ab hier 1 Tag nach hinten, Plan 1 Tag länger');
+        pruefe(await page.locator('#planCurrent .plan-day').count() === 8, '8 Tage angezeigt');
+        pruefe(await page.evaluate(t => getActivePlan().plan.days.find(x => x.date === t).type === 'ruhe' && !getActivityDaySet().has(t), T3), 'Verschobener Tag ist Ruhetag');
+        await page.evaluate(orig => { const l = getTrainingPlans(); l[l.length - 1] = orig; saveTrainingPlans(l); planMoveOpen = ''; planOpenDay = null; renderPlanPage(); }, rec);
+    }
+
     console.log('Abhaken:');
     const today = await page.evaluate(() => getLocalDateKey());
     pruefe(await page.locator(`#pdDone_${today}`).isVisible(), 'Heutige Einheit ist aufgeklappt');

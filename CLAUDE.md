@@ -109,6 +109,14 @@ Wichtige Details in `index.html`:
     Gewichts-Ø) → neue Schwerpunkte → nächster Plan; die KI schreibt dabei einen kurzen ehrlichen
     Wochenrückblick (`plan.review`). Alte Pläne mit Schwerpunkten und Check-in im „Verlauf“.
   - Startseite: Karte „Heute laut Plan“.
+  - **Trainingstag verschieben (seit 24.11.2026):** Bei jeder offenen Trainingseinheit des aktiven
+    Plans (nicht erledigt, kein Check-in) Knopf „📅 Geht heute nicht? Verschieben“. Zwei Wege:
+    (a) **Tausch mit einem freien Ruhetag** ab heute im selben Plan (`PlanCalc.moveDay`, Plan endet
+    gleich) oder (b) **„Ab hier 1 Tag nach hinten“** mit Rückfrage (`PlanCalc.shiftLater`: der Tag wird
+    Ruhetag, alles danach rutscht 1 Tag, Plan + Check-in 1 Tag später, Erledigt-Haken wandern mit).
+    Tage merken sich `movedFrom` (ursprünglicher Tag, Anzeige „Verschoben vom …“) bzw. `movedTo`
+    („Training verschoben auf …“). Der freigewordene Tag ist ein Plan-Ruhetag → Serie bricht nicht,
+    Erinnerungen passen sich an. Die KI erfährt beim nächsten Plan `verschobenVom`.
 - **Motivation (Teil 3, seit 23.11.2026):** Rechenteil im Block `MOTIV-CALC-START … MOTIV-CALC-END`
   (`MotivCalc`).
   - Serie „X Tage am Stück aktiv“ (`calculateStreaks`): aktive Tage werden **frisch aus den Daten
@@ -237,10 +245,11 @@ Wichtige Details in `index.html`:
 - `node test/plan_test.js` – prüft den KI-Plan-Teil ohne Browser/Internet: Zeitraum, Kosten,
   Anfrage (Modell, JSON-Format, kein Schlüssel im Inhalt, Gewicht als Ø/Trend, Schwerpunkte,
   Check-in, letzter Plan, Logbuch 14 Tage mit Gewichten/Sätzen, Bestwerte), JSON-Schema nach API-Regeln, Datenstrom lesen (Stücke, Fehler,
-  Modellwechsel), Plan prüfen, Fortschritt.
+  Modellwechsel), Plan prüfen, Fortschritt, Trainingstag verschieben (Tausch, nach hinten, Sperren).
 - `node test/plan_web_test.js` – spielt den ganzen Plan-Ablauf im Browser durch, die Claude-API
   wird **nachgespielt** (kein Guthaben, kein echter Schlüssel): Profil, Schlüssel, Fehlermeldungen
-  (falscher Schlüssel, kein Guthaben), Plan erstellen, Kopfzeilen, Logbuch + Bestwerte in der Anfrage, Abhaken, Check-in, nächster
+  (falscher Schlüssel, kein Guthaben), Plan erstellen, Kopfzeilen, Logbuch + Bestwerte in der Anfrage,
+  Verschieben (Tausch, Rückfrage, nach hinten), Abhaken, Check-in, nächster
   Plan, Verlauf, Backup ohne Schlüssel, Schlüssel löschen.
 - `node test/motivation_test.js` – prüft die Motivations-Berechnungen ohne Browser: Ruhetage (Plan,
   feste Wochentage, Plan geht vor), Serie mit Ruhetagen, „ohne Süßes“-Serie (auch Jahreswechsel),
@@ -386,6 +395,9 @@ Wichtige Details in `index.html`:
   letzten 14 Tage (Übungen, Gewichte, Sätze, Cardio, Läufe, Dehnen, Mini-Einheiten) und die Bestwerte.
   Nur Webseite, kein App-Update. Ein Plan wird dadurch etwas teurer (wenige Cent).
 
+- 24.11.2026 – Trainingstage verschieben (Wunsch des Nutzers): auf einen freien Ruhetag im Plan oder
+  „ab hier alles 1 Tag nach hinten“ (Plan wird 1 Tag länger). Nur Webseite, kein App-Update.
+
 ### Stand zum Weitermachen (24.11.2026)
 - App-Version auf dem Handy: **1.0.17** (Erinnerungen pünktlich). Webseite aktuell auf `main`.
 - Teil 1–4 des Auftrags vom 23.11. sind fertig, dazu Gewicht mit Trend und Erinnerungen v2.
@@ -394,6 +406,13 @@ Wichtige Details in `index.html`:
   Die Test-Listen unten sind dafür der Leitfaden.
 - Bei Problemen: der Nutzer meldet Erinnerung, Uhrzeit und den Text „Heute: …“ unter der
   Erinnerung im Profil – daran sieht man, ob sie absichtlich ausblieb.
+
+### Test-Liste „Trainingstag verschieben“ (zum Abhaken am Handy)
+- [ ] Plan → offene Einheit aufklappen → „📅 Geht heute nicht? Verschieben“ → freie Tage erscheinen.
+- [ ] Einen freien Tag antippen → Einheit liegt dort („Verschoben vom …“), alter Tag ist Ruhetag.
+- [ ] „Ab hier 1 Tag nach hinten“ → Rückfrage → „Verschieben“ → Plan endet 1 Tag später.
+- [ ] Serie bricht am verschobenen Tag nicht ab; Startseite „Heute laut Plan“ zeigt den neuen Stand.
+- [ ] Trainings-Erinnerung kommt am neuen Tag, nicht mehr am alten.
 
 ### Test-Liste Erinnerungen v2 + Serie (zum Abhaken am Handy)
 - [x] Nach dem Update: Test-Benachrichtigung kam sofort (24.11., Knopf danach entfernt).
